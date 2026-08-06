@@ -1,0 +1,21 @@
+{
+	"modListVersion": 2,
+	"modList": [{
+		"modid": "${modId}",
+		"name": "${modName}",
+		"description": "A mod that adds a Pattern Wand item with functionality copied from BetterBuildersWands.",
+		"version": "${modVersion}",
+		"mcversion": "${minecraftVersion}",
+		"url": "",
+		"updateUrl": "",
+		"authorList": ["PatternWand Team"],
+		"credits": "Based on BetterBuildersWands by portablejim",
+		"logoFile": "",
+		"screenshots": [],
+		"parent": "",
+		"requiredMods": ["betterbuilderswands"],
+		"dependencies": ["betterbuilderswands"],
+		"dependants": [],
+		"useDependencyInformation": true
+	}]
+}

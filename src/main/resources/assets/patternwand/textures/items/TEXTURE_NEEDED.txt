@@ -1,0 +1,6 @@
+This directory needs a patternWand.png texture file (16x16 pixels).
+
+The texture should be a 16x16 PNG file representing the Pattern Wand item.
+You can create one or copy/modify a texture from BetterBuildersWands.
+
+For now, the game will use the missing texture placeholder (purple/black checkerboard).
