@@ -7,7 +7,7 @@ import net.minecraftforge.common.config.Configuration;
 public class Config {
 
     public static String greeting = "Hello from PatternWand!";
-    public static int patternWandMaxBlocks = 1024;
+    public static int patternWandMaxBlocks = 8192*16;
     public static int patternWandDurability = 1561; // Same as diamond tools
 
     public static void synchronizeConfiguration(File configFile) {

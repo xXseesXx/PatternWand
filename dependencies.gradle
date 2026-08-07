@@ -35,5 +35,5 @@
  */
 dependencies {
     // BetterBuildersWands dependency - required for wand functionality
-    api("com.github.GTNewHorizons:BetterBuildersWands:1.2.4-GTNH:dev")
+    api("com.github.GTNewHorizons:BetterBuildersWands:0.13.11-GTNH:dev")
 }

@@ -3,18 +3,16 @@ package com.patternwand.items;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 
-import com.patternwand.Config;
-
 import portablejim.bbw.core.wands.IWand;
 
 /**
- * Pattern Wand implementation that uses durability and configuration.
+ * Tier 2 Pattern Wand with 2048 max blocks.
  */
-public class PatternWand implements IWand {
+public class PatternWandTier2 implements IWand {
 
     @Override
     public int getMaxBlocks(ItemStack itemStack) {
-        return Config.patternWandMaxBlocks;
+        return 2048;
     }
 
     @Override

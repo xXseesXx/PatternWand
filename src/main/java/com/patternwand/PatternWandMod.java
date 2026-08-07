@@ -3,12 +3,17 @@ package com.patternwand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.patternwand.network.PacketSyncPalette;
+
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import cpw.mods.fml.relauncher.Side;
 
 @Mod(
     modid = PatternWandMod.MODID,
@@ -27,8 +32,14 @@ public class PatternWandMod {
     @Mod.Instance(MODID)
     public static PatternWandMod instance;
 
+    public static SimpleNetworkWrapper networkWrapper;
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
+        // Register network handler
+        networkWrapper = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
+        networkWrapper.registerMessage(PacketSyncPalette.Handler.class, PacketSyncPalette.class, 0, Side.SERVER);
+
         proxy.preInit(event);
     }
 

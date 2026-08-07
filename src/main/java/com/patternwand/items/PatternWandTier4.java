@@ -3,27 +3,23 @@ package com.patternwand.items;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 
-import com.patternwand.Config;
-
 import portablejim.bbw.core.wands.IWand;
 
 /**
- * Pattern Wand implementation that uses durability and configuration.
+ * Tier 4 Pattern Wand with 8192 max blocks.
  */
-public class PatternWand implements IWand {
+public class PatternWandTier4 implements IWand {
 
     @Override
     public int getMaxBlocks(ItemStack itemStack) {
-        return Config.patternWandMaxBlocks;
+        return 8192;
     }
 
     @Override
     public boolean placeBlock(ItemStack itemStack, EntityLivingBase entityLivingBase) {
-        // Damage the wand when placing blocks
         if (!itemStack.isItemStackDamageable()) {
             return true;
         }
-
         itemStack.damageItem(1, entityLivingBase);
         return itemStack.getItemDamage() < itemStack.getMaxDamage();
     }
