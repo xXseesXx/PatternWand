@@ -1,6 +1,6 @@
 # PatternWand
 
-A Minecraft 1.7.10 addon for BetterBuildersWands ([original by Portablejim](https://github.com/Portablejim/BetterBuildersWands), [GTNH fork](https://github.com/GTNewHorizons/BetterBuildersWands)) that adds Lua scripting support for custom building patterns.
+A Minecraft 1.7.10 addon for [BetterBuildersWands](https://github.com/GTNewHorizons/BetterBuildersWands) that adds Lua scripting support for custom building patterns.
 
 ## Features
 
