@@ -1,11 +1,11 @@
 # PatternWand
 
-A Minecraft 1.7.10 addon for [BetterBuildersWands](https://github.com/Portablejim/BetterBuildersWands) that adds Lua scripting support for custom building patterns.
+A Minecraft 1.7.10 addon for BetterBuildersWands ([original by Portablejim](https://github.com/Portablejim/BetterBuildersWands), [GTNH fork](https://github.com/GTNewHorizons/BetterBuildersWands)) that adds Lua scripting support for custom building patterns.
 
 ## Features
 
 - **Lua Scripting**: Create custom building patterns using Lua scripts
-- **Multiple Wand Tiers**: Different tiers with varying capabilities
+- **Unbreakable Wand**: Single tier with 16384 (2^14) block capacity
 - **Pattern Library**: Includes example patterns like checkerboard, bricks, gradients, and noise-based terrain
 - **Block Palette System**: Define and use custom block palettes in your patterns
 - **Noise Generation**: Built-in Perlin and Simplex noise for procedural patterns
