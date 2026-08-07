@@ -9,16 +9,20 @@ The scripting engine is ready to use. Here's how to integrate it with your code.
 ### 1. Initialize the Loader
 
 ```java
-import com.patternwand.patterns.scripted.*;
+
 import java.io.File;
 
 // In your mod initialization (preInit or init)
 File patternsDir = new File("config/patternwand/patterns");
-PatternScriptLoader scriptLoader = new PatternScriptLoader(patternsDir);
-scriptLoader.loadAllPatterns();
+        PatternScriptLoader scriptLoader = new PatternScriptLoader(patternsDir);
+scriptLoader.
+
+        loadAllPatterns();
 
 // Log how many patterns were loaded
-PatternWandMod.LOG.info("Loaded {} pattern scripts", scriptLoader.getScriptCount());
+PatternWandMod.LOG.
+
+        info("Loaded {} pattern scripts",scriptLoader.getScriptCount());
 ```
 
 ### 2. Execute a Pattern Script

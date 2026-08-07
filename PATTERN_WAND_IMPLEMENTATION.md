@@ -54,13 +54,13 @@ When you use the wand:
 ## Files Created/Modified
 
 ### New Classes:
-- `com.patternwand.palette.PatternPalette` - Palette data structure
-- `com.patternwand.palette.PaletteEntry` - Single palette entry
-- `com.patternwand.palette.BlockMatcher` - Fast block matching
-- `com.patternwand.items.PatternWandWorker` - Custom WandWorker
-- `com.patternwand.gui.GuiPatternWand` - GUI screen
-- `com.patternwand.gui.ContainerPatternWand` - GUI container
-- `com.patternwand.gui.PatternWandGuiHandler` - GUI handler
+- `palette.com.xXseesXx.patternwand.PatternPalette` - Palette data structure
+- `palette.com.xXseesXx.patternwand.PaletteEntry` - Single palette entry
+- `palette.com.xXseesXx.patternwand.BlockMatcher` - Fast block matching
+- `items.com.xXseesXx.patternwand.PatternWandWorker` - Custom WandWorker
+- `gui.com.xXseesXx.patternwand.GuiPatternWand` - GUI screen
+- `gui.com.xXseesXx.patternwand.ContainerPatternWand` - GUI container
+- `gui.com.xXseesXx.patternwand.PatternWandGuiHandler` - GUI handler
 
 ### Modified Classes:
 - `ItemPatternWand.java` - Added palette support and GUI opening
