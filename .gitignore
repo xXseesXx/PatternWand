@@ -17,6 +17,8 @@ bin/
 
 # Minecraft development
 run/
+!run/client/config/
+!run/client/config/**
 logs/
 
 # OS
