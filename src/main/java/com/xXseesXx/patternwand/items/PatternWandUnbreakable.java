@@ -6,21 +6,18 @@ import net.minecraft.item.ItemStack;
 import portablejim.bbw.core.wands.IWand;
 
 /**
- * Tier 4 Pattern Wand with 8192 max blocks.
+ * Unbreakable Pattern Wand with 16384 (2^14) max blocks.
  */
-public class PatternWandTier4 implements IWand {
+public class PatternWandUnbreakable implements IWand {
 
     @Override
     public int getMaxBlocks(ItemStack itemStack) {
-        return 8192;
+        return 16384; // 2^14
     }
 
     @Override
     public boolean placeBlock(ItemStack itemStack, EntityLivingBase entityLivingBase) {
-        if (!itemStack.isItemStackDamageable()) {
-            return true;
-        }
-        itemStack.damageItem(1, entityLivingBase);
-        return itemStack.getItemDamage() < itemStack.getMaxDamage();
+        // Unbreakable - always returns true, never damages the item
+        return true;
     }
 }

@@ -14,7 +14,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import org.lwjgl.opengl.GL11;
 
 import com.xXseesXx.patternwand.items.IPatternWandItem;
-import com.xXseesXx.patternwand.items.ItemPatternWand;
+import com.xXseesXx.patternwand.items.ItemPatternWandUnbreakable;
 import com.xXseesXx.patternwand.items.PatternWandWorker;
 import com.xXseesXx.patternwand.palette.BlockMatcher;
 import com.xXseesXx.patternwand.palette.PatternPalette;
@@ -61,7 +61,7 @@ public class PatternWandBlockEvents {
         event.setCanceled(true);
 
         // Get the Pattern Wand item
-        ItemPatternWand wandItem = (ItemPatternWand) event.currentItem.getItem();
+        ItemPatternWandUnbreakable wandItem = (ItemPatternWandUnbreakable) event.currentItem.getItem();
         IWand wand = wandItem.getWand();
 
         // Set up shims for the player and world

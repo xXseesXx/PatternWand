@@ -1,12 +1,12 @@
 package com.xXseesXx.patternwand;
 
-import com.xXseesXx.patternwand.items.ItemPatternWand;
+import com.xXseesXx.patternwand.items.ItemPatternWandUnbreakable;
 
 public class ModItems {
 
-    public static ItemPatternWand patternWand;
+    public static ItemPatternWandUnbreakable patternWandUnbreakable;
 
     static {
-        patternWand = new ItemPatternWand();
+        patternWandUnbreakable = new ItemPatternWandUnbreakable();
     }
 }

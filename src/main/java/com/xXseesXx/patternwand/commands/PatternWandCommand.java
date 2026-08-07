@@ -11,7 +11,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 
 import com.xXseesXx.patternwand.PatternWandMod;
-import com.xXseesXx.patternwand.items.ItemPatternWand;
+import com.xXseesXx.patternwand.items.ItemPatternWandUnbreakable;
 import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
 import com.xXseesXx.patternwand.patterns.scripted.PatternScriptLoader;
 
@@ -132,7 +132,7 @@ public class PatternWandCommand extends CommandBase {
         EntityPlayer player = (EntityPlayer) sender;
         ItemStack heldItem = player.getCurrentEquippedItem();
 
-        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWand)) {
+        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWandUnbreakable)) {
             sender.addChatMessage(new ChatComponentText("§cYou must be holding a Pattern Wand"));
             return;
         }
@@ -169,7 +169,7 @@ public class PatternWandCommand extends CommandBase {
         EntityPlayer player = (EntityPlayer) sender;
         ItemStack heldItem = player.getCurrentEquippedItem();
 
-        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWand)) {
+        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWandUnbreakable)) {
             sender.addChatMessage(new ChatComponentText("§cYou must be holding a Pattern Wand"));
             return;
         }
@@ -205,7 +205,7 @@ public class PatternWandCommand extends CommandBase {
         EntityPlayer player = (EntityPlayer) sender;
         ItemStack heldItem = player.getCurrentEquippedItem();
 
-        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWand)) {
+        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWandUnbreakable)) {
             sender.addChatMessage(new ChatComponentText("§cYou must be holding a Pattern Wand"));
             return;
         }
@@ -241,7 +241,7 @@ public class PatternWandCommand extends CommandBase {
         EntityPlayer player = (EntityPlayer) sender;
         ItemStack heldItem = player.getCurrentEquippedItem();
 
-        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWand)) {
+        if (heldItem == null || !(heldItem.getItem() instanceof ItemPatternWandUnbreakable)) {
             sender.addChatMessage(new ChatComponentText("§cYou must be holding a Pattern Wand"));
             return;
         }

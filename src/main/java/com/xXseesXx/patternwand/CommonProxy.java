@@ -21,7 +21,7 @@ public class CommonProxy {
         Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
 
         // Register items
-        GameRegistry.registerItem(ModItems.patternWand, "patternWand");
+        GameRegistry.registerItem(ModItems.patternWandUnbreakable, "patternWandUnbreakable");
 
         // Register GUI handler
         NetworkRegistry.INSTANCE.registerGuiHandler(PatternWandMod.instance, new PatternWandGuiHandler());

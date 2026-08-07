@@ -15,7 +15,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.xXseesXx.patternwand.Config;
 import com.xXseesXx.patternwand.PatternWandMod;
 import com.xXseesXx.patternwand.palette.BlockMatcher;
 import com.xXseesXx.patternwand.palette.PatternPalette;
@@ -31,18 +30,18 @@ import portablejim.bbw.shims.IPlayerShim;
 import portablejim.bbw.shims.IWorldShim;
 
 /**
- * The Pattern Wand item - extends BetterBuildersWands with palette-based block matching.
+ * The Unbreakable Pattern Wand item - extends BetterBuildersWands with palette-based block matching.
  */
-public class ItemPatternWand extends ItemBasicWand implements IPatternWandItem {
+public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatternWandItem {
 
-    public ItemPatternWand() {
+    public ItemPatternWandUnbreakable() {
         super();
-        this.setUnlocalizedName("patternwand:patternWand");
-        this.setTextureName("patternwand:patternWand");
+        this.setUnlocalizedName("patternwand:patternWandUnbreakable");
+        this.setTextureName("patternwand:patternWandUnbreakable");
         this.setCreativeTab(CreativeTabs.tabTools);
         this.setMaxStackSize(1);
-        this.setMaxDamage(Config.patternWandDurability);
-        this.wand = new PatternWand();
+        this.setMaxDamage(0); // 0 means unbreakable
+        this.wand = new PatternWandUnbreakable();
     }
 
     @Override
