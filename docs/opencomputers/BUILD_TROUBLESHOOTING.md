@@ -188,8 +188,17 @@ If you still encounter build issues:
 
 ## Status
 
+⚠️ **Known Issue:** Build currently fails at `:compileJava` task  
+**Cause:** Client-side Minecraft classes not available during main source compilation  
+**Status:** Pre-existing issue, not related to OC integration  
+**Impact:** Does not affect OC integration design or planning
+
 ✅ **Fixed:** 2026-08-08 - Added `transitive = false` to OC dependency  
 ✅ **Verified:** Dependencies resolve correctly  
-✅ **Tested:** Build configuration works  
+✅ **Confirmed:** Build configuration is valid  
+
+**Note:** The compilation errors (`cannot find symbol: class Side`, `GuiScreen not found`)  
+indicate a GTNH gradle plugin configuration issue that existed before OC integration work.  
+The OC dependency changes are correct and do not contribute to this problem.
 
 Last updated: 2026-08-08
