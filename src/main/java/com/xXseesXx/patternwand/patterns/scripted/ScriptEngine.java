@@ -56,8 +56,7 @@ public class ScriptEngine {
 
         // Set memory limit (128KB per script instance - reasonable for pattern logic)
         // This prevents memory exhaustion attacks
-        globals.load(
-            new java.io.StringReader(""), "memory_limit")
+        globals.load(new java.io.StringReader(""), "memory_limit")
             .call();
     }
 
