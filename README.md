@@ -6,6 +6,10 @@ A Minecraft 1.7.10 addon for [BetterBuildersWands](https://github.com/GTNewHoriz
 
 **Only use pattern scripts from sources you trust!**
 
+## ⚠️ AI SLUSH WARNING
+
+**99% of the code is written by AI, i went through many tests and iterations of self critique but AI SLOP is still SLOP afterall**
+
 While PatternWand implements security measures (sandboxed Lua environment, execution timeouts, removed dangerous libraries), pattern scripts are still code that runs on your computer. Malicious patterns could potentially:
 - Cause game lag or crashes through computationally expensive operations
 - Consume excessive memory
@@ -29,8 +33,6 @@ The included example patterns are safe and can be used as templates for creating
 - **Block Palette System**: Define and use custom block palettes with advanced selection methods
 - **Noise Generation**: Built-in Perlin and Simplex noise for procedural patterns
 - **Geometry Utilities**: Helper functions for spheres, boxes, rotation, and smoothstep
-- **Debug Tools**: Built-in debugging with `debug.print()` for development
-- **Web Simulator**: Browser-based pattern playground for rapid prototyping (see `websim/`)
 
 ## Usage
 
@@ -38,16 +40,6 @@ Place your Lua pattern scripts in `config/patternwand/patterns/` and use the in-
 
 See the example patterns in `src/main/resources/assets/patternwand/patterns/examples/` for reference.
 
-### Web Simulator
-
-A browser-based pattern simulator is available in the `websim/` directory for rapid prototyping without launching Minecraft:
-
-1. Open `websim/index.html` in a modern web browser
-2. Write or load example patterns
-3. See instant 2D preview with adjustable parameters
-4. Test patterns before using them in-game
-
-See `websim/README.md` for full documentation.
 
 ### In-Game Commands
 
