@@ -16,7 +16,7 @@ public class BlockMatcher {
     /**
      * Create a BlockMatcher that matches based on block type only (ignores metadata/rotation).
      * 
-     * @param palette The palette containing blocks to match
+     * @param palette        The palette containing blocks to match
      * @param ignoreMetadata If true, only block type is matched (metadata/rotation is ignored).
      *                       If false, both block type and metadata must match exactly.
      */

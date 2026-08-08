@@ -248,7 +248,82 @@ public class UtilAPI {
     public double smoothstep(double edge0, double edge1, double x) {
         // Clamp x to [0, 1]
         double t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-        // Evaluate polynomial
+        // Hermite interpolation
         return t * t * (3.0 - 2.0 * t);
+    }
+
+    /**
+     * Rotate coordinates based on the clicked block face.
+     * This transforms relative coordinates (relX, relY, relZ) so that 2D patterns
+     * can be oriented correctly on any surface.
+     * 
+     * After transformation:
+     * - u: horizontal axis (left-right when facing the surface)
+     * - v: vertical axis (up-down when facing the surface)
+     * - w: depth axis (perpendicular to surface, positive = away from surface)
+     *
+     * Face values: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST
+     *
+     * @param relX Relative X coordinate
+     * @param relY Relative Y coordinate
+     * @param relZ Relative Z coordinate
+     * @param face Block face that was clicked (0-5)
+     * @return Array [u, v, w] - transformed coordinates
+     */
+    public double[] rotateFace(double relX, double relY, double relZ, int face) {
+        double u, v, w;
+        
+        switch (face) {
+            case 0: // DOWN (bottom face)
+                // Looking down at XZ plane
+                u = relX;
+                v = -relZ;  // Flip Z so forward is positive
+                w = -relY;  // Away from surface is up
+                break;
+                
+            case 1: // UP (top face)
+                // Looking up at XZ plane
+                u = relX;
+                v = relZ;
+                w = relY;   // Away from surface is up
+                break;
+                
+            case 2: // NORTH (negative Z)
+                // Looking north along XY plane
+                u = -relX;  // Flip X for consistent right-hand feel
+                v = relY;
+                w = -relZ;  // Away from surface is toward negative Z
+                break;
+                
+            case 3: // SOUTH (positive Z)
+                // Looking south along XY plane
+                u = relX;
+                v = relY;
+                w = relZ;   // Away from surface is toward positive Z
+                break;
+                
+            case 4: // WEST (negative X)
+                // Looking west along ZY plane
+                u = relZ;
+                v = relY;
+                w = -relX;  // Away from surface is toward negative X
+                break;
+                
+            case 5: // EAST (positive X)
+                // Looking east along ZY plane
+                u = -relZ;  // Flip Z for consistent right-hand feel
+                v = relY;
+                w = relX;   // Away from surface is toward positive X
+                break;
+                
+            default:
+                // Invalid face, return unchanged
+                u = relX;
+                v = relY;
+                w = relZ;
+                break;
+        }
+        
+        return new double[] { u, v, w };
     }
 }

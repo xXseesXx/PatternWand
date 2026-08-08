@@ -14,6 +14,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.IFluidBlock;
 
+import com.xXseesXx.patternwand.Config;
 import com.xXseesXx.patternwand.PatternWandMod;
 import com.xXseesXx.patternwand.palette.BlockMatcher;
 import com.xXseesXx.patternwand.palette.PaletteEntry;
@@ -69,17 +70,18 @@ public class PatternWandWorker extends WandWorker {
         this.wandItem = wandItem;
         this.originPos = originPos;
         this.worldShim = worldShim; // Store reference
-        
+
         // Determine whether to ignore metadata based on active pattern's metadata
         boolean ignoreMetadata = false;
         String activePattern = getActivePattern(wandItem);
         if (activePattern != null && !activePattern.isEmpty()) {
-            CompiledScript script = PatternWandMod.proxy.getScriptLoader().getScript(activePattern);
+            CompiledScript script = PatternWandMod.proxy.getScriptLoader()
+                .getScript(activePattern);
             if (script != null && script.metadata != null) {
                 ignoreMetadata = script.metadata.shouldIgnoreMetadata();
             }
         }
-        
+
         this.matcher = new BlockMatcher(palette, ignoreMetadata);
     }
 
@@ -436,8 +438,8 @@ public class PatternWandWorker extends WandWorker {
 
     /**
      * Get pattern seed for deterministic noise generation.
-     * Uses custom seed from NBT if set, otherwise uses world seed.
-     * This ensures patterns are consistent across the world regardless of click position.
+     * Uses custom seed from NBT if set, otherwise uses configured default seed.
+     * This ensures patterns are consistent across worlds unless a custom seed is set.
      */
     private long getPatternSeed(ItemStack wand) {
         // Check for custom seed in NBT
@@ -448,10 +450,9 @@ public class PatternWandWorker extends WandWorker {
             }
         }
 
-        // Fall back to world seed for deterministic patterns
-        // This ensures the same coordinates always produce the same noise
-        return worldShim.getWorld()
-            .getSeed();
+        // Fall back to configured default seed
+        // This ensures consistent patterns across worlds
+        return Config.defaultPatternSeed;
     }
 
     /**

@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 
+import com.xXseesXx.patternwand.Config;
 import com.xXseesXx.patternwand.PatternWandMod;
 import com.xXseesXx.patternwand.items.ItemPatternWandUnbreakable;
 import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
@@ -263,8 +264,7 @@ public class PatternWandCommand extends CommandBase {
             long seed = tag.getLong("patternSeed");
             sender.addChatMessage(new ChatComponentText("§aCustom seed: §f" + seed));
         } else {
-            long worldSeed = player.worldObj.getSeed();
-            sender.addChatMessage(new ChatComponentText("§7Using world seed: §f" + worldSeed));
+            sender.addChatMessage(new ChatComponentText("§7Using default seed: §f" + Config.defaultPatternSeed));
         }
     }
 
@@ -322,7 +322,7 @@ public class PatternWandCommand extends CommandBase {
         if (tag != null && tag.hasKey("patternSeed")) {
             tag.removeTag("patternSeed");
             sender.addChatMessage(new ChatComponentText("§aCleared custom seed"));
-            sender.addChatMessage(new ChatComponentText("§7Now using world seed: §f" + player.worldObj.getSeed()));
+            sender.addChatMessage(new ChatComponentText("§7Now using default seed: §f" + Config.defaultPatternSeed));
         } else {
             sender.addChatMessage(new ChatComponentText("§eNo custom seed was set"));
         }

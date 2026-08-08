@@ -16,7 +16,6 @@ import org.lwjgl.opengl.GL11;
 import com.xXseesXx.patternwand.items.IPatternWandItem;
 import com.xXseesXx.patternwand.items.ItemPatternWandUnbreakable;
 import com.xXseesXx.patternwand.items.PatternWandWorker;
-import com.xXseesXx.patternwand.palette.BlockMatcher;
 import com.xXseesXx.patternwand.palette.PatternPalette;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;

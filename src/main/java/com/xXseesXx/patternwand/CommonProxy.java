@@ -49,7 +49,9 @@ public class CommonProxy {
 
     public void serverStarting(FMLServerStartingEvent event) {
         // Register commands
-        event.registerServerCommand(new PatternWandCommand(scriptLoader));
+        PatternWandCommand mainCommand = new PatternWandCommand(scriptLoader);
+        event.registerServerCommand(mainCommand);
+        event.registerServerCommand(new com.xXseesXx.patternwand.commands.PatternWandAliasCommand(mainCommand, "pw"));
     }
 
     public PatternScriptLoader getScriptLoader() {

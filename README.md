@@ -34,17 +34,19 @@ See `websim/README.md` for full documentation.
 
 ### In-Game Commands
 
-- `/patternwand reload` - Reload all pattern scripts from disk
-- `/patternwand list` - List all loaded patterns
-- `/patternwand set <pattern> [param=value ...]` - Set active pattern with optional parameters
-  - Example: `/patternwand set configurable_bricks brickWidth=6 weathered=false`
+All commands are available under both `/patternwand` and the shorter alias `/pw`.
+
+- `/patternwand reload` (or `/pw reload`) - Reload all pattern scripts from disk
+- `/patternwand list` (or `/pw list`) - List all loaded patterns
+- `/patternwand set <pattern> [param=value ...]` (or `/pw set ...`) - Set active pattern with optional parameters
+  - Example: `/pw set configurable_bricks brickWidth=6 weathered=false`
   - Parameters can be in any order
   - Use `=` or `:` as separator (e.g., `size=10` or `size:10`)
   - Tab completion suggests available parameters
-- `/patternwand info` - Show info about currently held wand
-- `/patternwand seed <value>` - Set custom seed for pattern randomization
-- `/patternwand clearseed` - Clear custom seed (use world seed)
-- `/patternwand debug <on|off>` - Enable/disable debug output for pattern development
+- `/patternwand info` (or `/pw info`) - Show info about currently held wand
+- `/patternwand seed <value>` (or `/pw seed ...`) - Set custom seed for pattern randomization
+- `/patternwand clearseed` (or `/pw clearseed`) - Clear custom seed (use default seed)
+- `/patternwand debug <on|off>` (or `/pw debug ...`) - Enable/disable debug output for pattern development
 
 ### Lua Scripting API
 
@@ -164,6 +166,13 @@ All noise functions return values in range `[-1, 1]`.
 - `util.inSphere(x, y, z, centerX, centerY, centerZ, radius)` - Check if point is in sphere
 - `util.inBox(x, y, z, minX, minY, minZ, maxX, maxY, maxZ)` - Check if point is in box
 - `util.rotate2D(x, y, angle)` - Rotate 2D point (returns table `{x, y}`)
+- `util.rotateFace(relX, relY, relZ, face)` - Transform coordinates based on clicked face (returns table `{u, v, w}`)
+  - Transforms relative coordinates so 2D patterns work correctly on any surface
+  - `u` = horizontal axis (left-right when facing the surface)
+  - `v` = vertical axis (up-down when facing the surface)
+  - `w` = depth axis (perpendicular to surface, positive = away from surface)
+  - Face values: 0=DOWN, 1=UP, 2=NORTH, 3=SOUTH, 4=WEST, 5=EAST
+  - Use with `context.clickFace` to orient patterns relative to clicked face
 
 **Hash Functions:**
 - `util.hash(x, z)` - Deterministic 2D hash for pseudorandom patterns
