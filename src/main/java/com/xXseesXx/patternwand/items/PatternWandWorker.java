@@ -330,6 +330,9 @@ public class PatternWandWorker extends WandWorker {
 
         ArrayList<Point3d> placedBlocks = new ArrayList<>();
 
+        // Start timing for debug mode
+        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPatternTiming();
+
         // Get the compiled pattern script from proxy
         CompiledScript script = PatternWandMod.proxy.getScriptLoader()
             .getScript(patternName);
@@ -416,6 +419,9 @@ public class PatternWandWorker extends WandWorker {
                 // Continue with other blocks
             }
         }
+
+        // Finish timing and print summary
+        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.finishPatternTiming();
 
         return placedBlocks;
     }

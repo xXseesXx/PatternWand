@@ -12,6 +12,11 @@ public class DebugAPI {
     private static boolean debugEnabled = false;
     private static final List<String> debugMessages = new ArrayList<String>();
 
+    // Timing tracking fields
+    private static long totalExecutionTimeNs = 0;
+    private static int blockCount = 0;
+    private static long patternStartTimeNs = 0;
+
     /**
      * Enable or disable debug mode.
      *
@@ -21,6 +26,7 @@ public class DebugAPI {
         debugEnabled = enabled;
         if (!enabled) {
             debugMessages.clear();
+            resetTiming();
         }
     }
 
@@ -31,6 +37,62 @@ public class DebugAPI {
      */
     public static boolean isDebugEnabled() {
         return debugEnabled;
+    }
+
+    /**
+     * Start timing a pattern execution sequence.
+     * Should be called before pattern placement begins.
+     */
+    public static void startPatternTiming() {
+        if (debugEnabled) {
+            patternStartTimeNs = System.nanoTime();
+            totalExecutionTimeNs = 0;
+            blockCount = 0;
+        }
+    }
+
+    /**
+     * Record the execution time for a single block.
+     *
+     * @param executionTimeNs Time taken to execute pattern for one block (in nanoseconds)
+     */
+    public static void recordBlockExecution(long executionTimeNs) {
+        if (debugEnabled) {
+            totalExecutionTimeNs += executionTimeNs;
+            blockCount++;
+        }
+    }
+
+    /**
+     * Finish pattern timing and print summary.
+     * Should be called after pattern placement is complete.
+     */
+    public static void finishPatternTiming() {
+        if (debugEnabled && blockCount > 0) {
+            long totalTimeNs = System.nanoTime() - patternStartTimeNs;
+            double totalMs = totalTimeNs / 1_000_000.0;
+            double patternMs = totalExecutionTimeNs / 1_000_000.0;
+            double nsPerBlock = (double) totalExecutionTimeNs / blockCount;
+
+            String timingMsg = String.format(
+                "Pattern execution complete: %d blocks in %.3f ms (%.3f ms pattern time, %.1f ns/block)",
+                blockCount,
+                totalMs,
+                patternMs,
+                nsPerBlock);
+
+            debugMessages.add(timingMsg);
+            System.out.println("[PatternWand Debug] " + timingMsg);
+        }
+    }
+
+    /**
+     * Reset timing statistics.
+     */
+    public static void resetTiming() {
+        totalExecutionTimeNs = 0;
+        blockCount = 0;
+        patternStartTimeNs = 0;
     }
 
     /**

@@ -247,6 +247,9 @@ public class ScriptEngine {
         IInventory paletteInventory, long seed, java.util.Map<String, Object> parameterValues, PlacementContext context)
         throws ScriptExecutionException {
 
+        // Start timing if debug is enabled
+        long startTimeNs = DebugAPI.isDebugEnabled() ? System.nanoTime() : 0;
+
         // Create API objects
         NoiseAPI noise = new NoiseAPI(seed);
         PaletteAPI palette = new PaletteAPI(paletteInventory, seed);
@@ -318,7 +321,15 @@ public class ScriptEngine {
         Future<Integer> future = executor.submit(task);
 
         try {
-            return future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            Integer result = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+            // Record execution time if debug is enabled
+            if (DebugAPI.isDebugEnabled()) {
+                long executionTimeNs = System.nanoTime() - startTimeNs;
+                DebugAPI.recordBlockExecution(executionTimeNs);
+            }
+
+            return result;
 
         } catch (TimeoutException e) {
             future.cancel(true);

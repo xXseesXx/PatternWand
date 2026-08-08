@@ -336,6 +336,7 @@ public class PatternWandCommand extends CommandBase {
             sender.addChatMessage(new ChatComponentText("§aDebug mode enabled"));
             sender.addChatMessage(
                 new ChatComponentText("§7Pattern scripts can now output debug messages using debug.print()"));
+            sender.addChatMessage(new ChatComponentText("§7Pattern execution timing will be tracked and displayed"));
         } else if (lowerMode.equals("off") || lowerMode.equals("false") || lowerMode.equals("disable")) {
             DebugAPI.setDebugEnabled(false);
             sender.addChatMessage(new ChatComponentText("§eDebug mode disabled"));
