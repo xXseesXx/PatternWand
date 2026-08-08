@@ -21,21 +21,6 @@ Place your Lua pattern scripts in `config/patternwand/patterns/` and use the in-
 
 See the example patterns in `src/main/resources/assets/patternwand/patterns/examples/` for reference.
 
-### OpenComputers Integration (Planned)
-
-**Status:** Design Complete, Implementation Pending
-
-PatternWand will support optional OpenComputers integration for advanced pattern workflows:
-
-- **Pattern Generation**: Create patterns programmatically from OC computers
-- **Pattern Preview**: Visualize patterns before placement on OC screens
-- **Library Management**: Browse, search, and manage pattern collections via OC
-- **Robot Automation**: Control pattern wands from OC robots for automated building
-
-See `docs/OPENCOMPUTERS_INTEGRATION.md` for full design details and `docs/opencomputers/QUICK_REFERENCE.md` for API documentation.
-
-> **Note:** This is an optional soft dependency. PatternWand works perfectly without OpenComputers installed.
-
 ### Web Simulator
 
 A browser-based pattern simulator is available in the `websim/` directory for rapid prototyping without launching Minecraft:
