@@ -6,6 +6,11 @@ dependencies {
     
     // OpenComputers for optional integration - not included in runtime
     // Integration will be soft-loaded using @Optional annotations
-    devOnlyNonPublishable("com.github.GTNewHorizons:OpenComputers:1.10.21-GTNH:dev")
-    compileOnlyApi("com.github.GTNewHorizons:OpenComputers:1.10.21-GTNH:dev")
+    // Using transitive = false to avoid pulling in all of OC's dependencies
+    devOnlyNonPublishable("com.github.GTNewHorizons:OpenComputers:1.10.21-GTNH:dev") {
+        transitive = false
+    }
+    compileOnlyApi("com.github.GTNewHorizons:OpenComputers:1.10.21-GTNH:dev") {
+        transitive = false
+    }
 }
