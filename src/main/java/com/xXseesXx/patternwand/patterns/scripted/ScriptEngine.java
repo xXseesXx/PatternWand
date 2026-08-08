@@ -53,6 +53,7 @@ public class ScriptEngine {
         globals.set("dofile", LuaValue.NIL); // Remove file execution
         globals.set("loadfile", LuaValue.NIL); // Remove file loading
         globals.set("require", LuaValue.NIL); // Remove module loading
+        globals.set("luajava", LuaValue.NIL); // Remove Java binding library (prevents access to Java classes)
 
         // Set memory limit (128KB per script instance - reasonable for pattern logic)
         // This prevents memory exhaustion attacks
