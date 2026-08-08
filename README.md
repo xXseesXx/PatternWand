@@ -77,6 +77,7 @@ Patterns can expose metadata and configurable parameters using a dictionary form
 metadata = {
     name = "Brick Wall",
     author = "PatternWand",
+    description = "Creates a realistic brick wall pattern with configurable dimensions",
     ignoreMetadata = false,
     parameters = {
         brickWidth = {type = "integer", default = 4, min = 2, max = 8},
@@ -90,6 +91,7 @@ metadata = {
 **Metadata fields:**
 - `name` - Display name for the pattern (optional)
 - `author` - Pattern author name (optional)
+- `description` - Brief description of what the pattern does (optional)
 - `ignoreMetadata` - If `true`, flood-fill ignores block rotation/metadata when matching (optional, default: `false`)
   - Use this when you want to match blocks regardless of rotation (e.g., logs in any orientation)
   - When `false`, blocks must match exactly including metadata (e.g., only match north-facing logs)

@@ -12,6 +12,7 @@ public class PatternMetadata {
 
     private final String name;
     private final String author;
+    private final String description;
     private final List<PatternParameter> parameters;
     private final Map<String, PatternParameter> parameterMap;
     private final boolean ignoreMetadata;
@@ -21,12 +22,15 @@ public class PatternMetadata {
      *
      * @param name           Pattern display name
      * @param author         Pattern author
+     * @param description    Pattern description
      * @param parameters     List of configurable parameters
      * @param ignoreMetadata If true, flood-fill ignores block metadata/rotation when matching
      */
-    public PatternMetadata(String name, String author, List<PatternParameter> parameters, boolean ignoreMetadata) {
+    public PatternMetadata(String name, String author, String description, List<PatternParameter> parameters,
+        boolean ignoreMetadata) {
         this.name = name != null ? name : "Unnamed Pattern";
         this.author = author != null ? author : "Unknown";
+        this.description = description != null ? description : "";
         this.parameters = parameters != null ? parameters : Collections.<PatternParameter>emptyList();
         this.ignoreMetadata = ignoreMetadata;
 
@@ -40,18 +44,28 @@ public class PatternMetadata {
     /**
      * Legacy constructor for backward compatibility.
      *
-     * @deprecated Use {@link #PatternMetadata(String, String, List, boolean)} instead
+     * @deprecated Use {@link #PatternMetadata(String, String, String, List, boolean)} instead
+     */
+    @Deprecated
+    public PatternMetadata(String name, String author, List<PatternParameter> parameters, boolean ignoreMetadata) {
+        this(name, author, "", parameters, ignoreMetadata);
+    }
+
+    /**
+     * Legacy constructor for backward compatibility.
+     *
+     * @deprecated Use {@link #PatternMetadata(String, String, String, List, boolean)} instead
      */
     @Deprecated
     public PatternMetadata(String name, String author, List<PatternParameter> parameters) {
-        this(name, author, parameters, false);
+        this(name, author, "", parameters, false);
     }
 
     /**
      * Create default metadata with no parameters.
      */
     public PatternMetadata() {
-        this(null, null, null);
+        this(null, null, null, null, false);
     }
 
     public String getName() {
@@ -60,6 +74,10 @@ public class PatternMetadata {
 
     public String getAuthor() {
         return author;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public List<PatternParameter> getParameters() {

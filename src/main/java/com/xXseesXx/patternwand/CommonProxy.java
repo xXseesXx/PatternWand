@@ -26,7 +26,7 @@ public class CommonProxy {
         // Register GUI handler
         NetworkRegistry.INSTANCE.registerGuiHandler(PatternWandMod.instance, new PatternWandGuiHandler());
 
-        // Initialize pattern script loader
+        // Initialize pattern script loader (but don't load patterns yet)
         File configDir = event.getModConfigurationDirectory();
         File patternsDir = new File(configDir, "patternwand/patterns");
 
@@ -37,13 +37,17 @@ public class CommonProxy {
         }
 
         scriptLoader = new PatternScriptLoader(patternsDir);
-        scriptLoader.loadAllPatterns();
 
         PatternWandMod.LOG.info(Config.greeting);
         PatternWandMod.LOG.info("Pattern Wand item registered!");
     }
 
-    public void init(FMLInitializationEvent event) {}
+    public void init(FMLInitializationEvent event) {
+        // Load patterns during init phase when resource managers are fully available
+        if (scriptLoader != null) {
+            scriptLoader.loadAllPatterns();
+        }
+    }
 
     public void postInit(FMLPostInitializationEvent event) {}
 

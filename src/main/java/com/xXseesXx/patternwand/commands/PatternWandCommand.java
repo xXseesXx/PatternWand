@@ -111,9 +111,11 @@ public class PatternWandCommand extends CommandBase {
 
     private void handleReload(ICommandSender sender) {
         try {
+            // Reload patterns from filesystem and mod assets
             scriptLoader.reload();
-            sender.addChatMessage(
-                new ChatComponentText("§aReloaded " + scriptLoader.getScriptCount() + " pattern scripts"));
+            int count = scriptLoader.getScriptCount();
+
+            sender.addChatMessage(new ChatComponentText("§aReloaded " + count + " pattern scripts"));
         } catch (Exception e) {
             sender.addChatMessage(new ChatComponentText("§cFailed to reload patterns: " + e.getMessage()));
             PatternWandMod.LOG.error("Failed to reload patterns", e);
@@ -223,6 +225,16 @@ public class PatternWandCommand extends CommandBase {
             sender.addChatMessage(new ChatComponentText("§aSet active pattern to: §f" + patternName));
         }
 
+        // Show author and description if available
+        String author = script.metadata.getAuthor();
+        String description = script.metadata.getDescription();
+        if (author != null && !author.equals("Unknown")) {
+            sender.addChatMessage(new ChatComponentText("§7Author: §f" + author));
+        }
+        if (description != null && !description.isEmpty()) {
+            sender.addChatMessage(new ChatComponentText("§7Description: §f" + description));
+        }
+
         // Show parameter info if pattern has parameters
         if (script.metadata.hasParameters() && paramCount == 0) {
             sender.addChatMessage(new ChatComponentText("§7Available parameters:"));
@@ -257,6 +269,19 @@ public class PatternWandCommand extends CommandBase {
             String activePattern = tag.getString("activePattern");
             String displayName = activePattern.replace(".lua", "");
             sender.addChatMessage(new ChatComponentText("§aActive pattern: §f" + displayName));
+
+            // Show metadata if available
+            CompiledScript script = scriptLoader.getScript(activePattern);
+            if (script != null && script.metadata != null) {
+                String author = script.metadata.getAuthor();
+                String description = script.metadata.getDescription();
+                if (author != null && !author.equals("Unknown")) {
+                    sender.addChatMessage(new ChatComponentText("§7Author: §f" + author));
+                }
+                if (description != null && !description.isEmpty()) {
+                    sender.addChatMessage(new ChatComponentText("§7Description: §f" + description));
+                }
+            }
         }
 
         // Seed info

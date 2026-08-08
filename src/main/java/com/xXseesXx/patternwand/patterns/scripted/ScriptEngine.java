@@ -119,6 +119,7 @@ public class ScriptEngine {
     private PatternMetadata extractMetadata(LuaValue metadataTable) {
         String name = null;
         String author = null;
+        String description = null;
         boolean ignoreMetadata = false;
         java.util.List<PatternParameter> parameters = new java.util.ArrayList<PatternParameter>();
 
@@ -132,6 +133,12 @@ public class ScriptEngine {
         LuaValue authorValue = metadataTable.get("author");
         if (!authorValue.isnil()) {
             author = authorValue.tojstring();
+        }
+
+        // Extract description
+        LuaValue descriptionValue = metadataTable.get("description");
+        if (!descriptionValue.isnil()) {
+            description = descriptionValue.tojstring();
         }
 
         // Extract ignoreMetadata flag
@@ -164,7 +171,7 @@ public class ScriptEngine {
             }
         }
 
-        return new PatternMetadata(name, author, parameters, ignoreMetadata);
+        return new PatternMetadata(name, author, description, parameters, ignoreMetadata);
     }
 
     /**

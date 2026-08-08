@@ -1,0 +1,367 @@
+{
+  "main/java/com/xXseesXx/patternwand/ClientProxy.java": {
+    "mtime": 1786205409.7558205,
+    "ast_hash": "67624426ca4c385f246428f5c3780136",
+    "semantic_hash": "67624426ca4c385f246428f5c3780136"
+  },
+  "main/java/com/xXseesXx/patternwand/CommonProxy.java": {
+    "mtime": 1786203125.292653,
+    "ast_hash": "841ef8c7d111238e4aa7192666b81cfc",
+    "semantic_hash": "841ef8c7d111238e4aa7192666b81cfc"
+  },
+  "main/java/com/xXseesXx/patternwand/Config.java": {
+    "mtime": 1786200803.7879758,
+    "ast_hash": "4741999527d47a86df1fe282a8bb6be9",
+    "semantic_hash": "4741999527d47a86df1fe282a8bb6be9"
+  },
+  "main/java/com/xXseesXx/patternwand/ModItems.java": {
+    "mtime": 1786187770.4014554,
+    "ast_hash": "05caa3c54590384bf9dd15131e0bedb8",
+    "semantic_hash": "05caa3c54590384bf9dd15131e0bedb8"
+  },
+  "main/java/com/xXseesXx/patternwand/PatternWandMod.java": {
+    "mtime": 1786187770.4014554,
+    "ast_hash": "79dc02defb623bf9bb0a350369afbb54",
+    "semantic_hash": "79dc02defb623bf9bb0a350369afbb54"
+  },
+  "main/java/com/xXseesXx/patternwand/client/PatternWandBlockEvents.java": {
+    "mtime": 1786200803.7879758,
+    "ast_hash": "f0c9d14c9dd03dfc01cab80bbb5a7b34",
+    "semantic_hash": "f0c9d14c9dd03dfc01cab80bbb5a7b34"
+  },
+  "main/java/com/xXseesXx/patternwand/commands/PatternWandAliasCommand.java": {
+    "mtime": 1786200803.7889757,
+    "ast_hash": "c6a93410b02cd85ad53e4a6176eddc3b",
+    "semantic_hash": "c6a93410b02cd85ad53e4a6176eddc3b"
+  },
+  "main/java/com/xXseesXx/patternwand/commands/PatternWandCommand.java": {
+    "mtime": 1786215928.9995263,
+    "ast_hash": "6853a72f50933394bec8b8033a2c5706",
+    "semantic_hash": "6853a72f50933394bec8b8033a2c5706"
+  },
+  "main/java/com/xXseesXx/patternwand/gui/ContainerPatternWand.java": {
+    "mtime": 1786187770.4021573,
+    "ast_hash": "d0144403ca11750c1f8e979eb5fe706e",
+    "semantic_hash": "d0144403ca11750c1f8e979eb5fe706e"
+  },
+  "main/java/com/xXseesXx/patternwand/gui/GuiPatternWand.java": {
+    "mtime": 1786187770.402426,
+    "ast_hash": "175515a70852ba939b9dcc0960494fba",
+    "semantic_hash": "175515a70852ba939b9dcc0960494fba"
+  },
+  "main/java/com/xXseesXx/patternwand/gui/PatternWandGuiHandler.java": {
+    "mtime": 1786187770.402426,
+    "ast_hash": "9823e7b50af93df997147efce9d707c0",
+    "semantic_hash": "9823e7b50af93df997147efce9d707c0"
+  },
+  "main/java/com/xXseesXx/patternwand/items/IPatternWandItem.java": {
+    "mtime": 1786187770.402426,
+    "ast_hash": "eaa13c165f5571ca1f91fee11a100128",
+    "semantic_hash": "eaa13c165f5571ca1f91fee11a100128"
+  },
+  "main/java/com/xXseesXx/patternwand/items/ItemPatternWandUnbreakable.java": {
+    "mtime": 1786200803.7889757,
+    "ast_hash": "ef89b8b2316b46352c4a621e0b56ad3c",
+    "semantic_hash": "ef89b8b2316b46352c4a621e0b56ad3c"
+  },
+  "main/java/com/xXseesXx/patternwand/items/PatternWandUnbreakable.java": {
+    "mtime": 1786187770.4025311,
+    "ast_hash": "13134fd4b771e4a34e6c77e3b134122f",
+    "semantic_hash": "13134fd4b771e4a34e6c77e3b134122f"
+  },
+  "main/java/com/xXseesXx/patternwand/items/PatternWandWorker.java": {
+    "mtime": 1786200803.7899756,
+    "ast_hash": "66234a5da00fef084e759c757d864b2e",
+    "semantic_hash": "66234a5da00fef084e759c757d864b2e"
+  },
+  "main/java/com/xXseesXx/patternwand/network/GenericHandler.java": {
+    "mtime": 1786187770.4025311,
+    "ast_hash": "b3df99a371c28959fe372c059c97ac79",
+    "semantic_hash": "b3df99a371c28959fe372c059c97ac79"
+  },
+  "main/java/com/xXseesXx/patternwand/network/PacketSyncPalette.java": {
+    "mtime": 1786187770.403317,
+    "ast_hash": "4b666c9202783c1abff9d0b6f4cac977",
+    "semantic_hash": "4b666c9202783c1abff9d0b6f4cac977"
+  },
+  "main/java/com/xXseesXx/patternwand/noise/PerlinNoise.java": {
+    "mtime": 1786187770.403317,
+    "ast_hash": "e60bfffaee022040103697624243f33a",
+    "semantic_hash": "e60bfffaee022040103697624243f33a"
+  },
+  "main/java/com/xXseesXx/patternwand/noise/SimplexNoise.java": {
+    "mtime": 1786187770.4035592,
+    "ast_hash": "45295fc4395cba09d8cfe8b8e089a747",
+    "semantic_hash": "45295fc4395cba09d8cfe8b8e089a747"
+  },
+  "main/java/com/xXseesXx/patternwand/noise/ValueNoise.java": {
+    "mtime": 1786200803.7899756,
+    "ast_hash": "770865db36737323d9405a5d23d71df1",
+    "semantic_hash": "770865db36737323d9405a5d23d71df1"
+  },
+  "main/java/com/xXseesXx/patternwand/palette/BlockMatcher.java": {
+    "mtime": 1786200803.7899756,
+    "ast_hash": "ad3a7d5dd60663abfbd59fb1476ca07f",
+    "semantic_hash": "ad3a7d5dd60663abfbd59fb1476ca07f"
+  },
+  "main/java/com/xXseesXx/patternwand/palette/PaletteEntry.java": {
+    "mtime": 1786187770.4042645,
+    "ast_hash": "16113dce3a0de7ece9b34e5121b6bcb2",
+    "semantic_hash": "16113dce3a0de7ece9b34e5121b6bcb2"
+  },
+  "main/java/com/xXseesXx/patternwand/palette/PatternPalette.java": {
+    "mtime": 1786187770.4042645,
+    "ast_hash": "f6d918598c11d4ea73456b66d06a9ccd",
+    "semantic_hash": "f6d918598c11d4ea73456b66d06a9ccd"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/CompiledScript.java": {
+    "mtime": 1786200803.7899756,
+    "ast_hash": "1f7c53cfa6fb04c123a79caffb70ad19",
+    "semantic_hash": "1f7c53cfa6fb04c123a79caffb70ad19"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/PatternMetadata.java": {
+    "mtime": 1786216041.7264366,
+    "ast_hash": "c778e3088eecc275f499fb3fb0597886",
+    "semantic_hash": "c778e3088eecc275f499fb3fb0597886"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/PatternParameter.java": {
+    "mtime": 1786200803.7899756,
+    "ast_hash": "73cb01743377fb2dbf65376c897ce68a",
+    "semantic_hash": "73cb01743377fb2dbf65376c897ce68a"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/PatternScriptLoader.java": {
+    "mtime": 1786211777.7048898,
+    "ast_hash": "761bec4f576b4559805168b0d7271a8a",
+    "semantic_hash": "761bec4f576b4559805168b0d7271a8a"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/PlacementContext.java": {
+    "mtime": 1786200803.7899756,
+    "ast_hash": "2de5777d6de79417250e8953ade00f7f",
+    "semantic_hash": "2de5777d6de79417250e8953ade00f7f"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/ScriptCompileException.java": {
+    "mtime": 1786187770.404605,
+    "ast_hash": "d440116cbf4e29ada757c5098daa322b",
+    "semantic_hash": "d440116cbf4e29ada757c5098daa322b"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/ScriptEngine.java": {
+    "mtime": 1786215900.9470518,
+    "ast_hash": "a974cb7dd2b14928b08d200795fa1e7b",
+    "semantic_hash": "a974cb7dd2b14928b08d200795fa1e7b"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/ScriptExecutionException.java": {
+    "mtime": 1786187770.404605,
+    "ast_hash": "379ce54bd15928851a642cdfa044a3af",
+    "semantic_hash": "379ce54bd15928851a642cdfa044a3af"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/DebugAPI.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "a905b236bba42dafd727fda7c2e9a2b8",
+    "semantic_hash": "a905b236bba42dafd727fda7c2e9a2b8"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/LuaContextWrapper.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "643696cd8edad0fb5101a31e3d901def",
+    "semantic_hash": "643696cd8edad0fb5101a31e3d901def"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/LuaDebugWrapper.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "094ba6263a09a050315a75de7def0e72",
+    "semantic_hash": "094ba6263a09a050315a75de7def0e72"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/LuaNoiseWrapper.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "f05b9a509c3ad05e93cdbfb3ed4fb9b4",
+    "semantic_hash": "f05b9a509c3ad05e93cdbfb3ed4fb9b4"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/LuaPaletteWrapper.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "85e436a588db94cd2013150a16e9cf58",
+    "semantic_hash": "85e436a588db94cd2013150a16e9cf58"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/LuaUtilWrapper.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "60b78e0aa1b37894227865ca82917013",
+    "semantic_hash": "60b78e0aa1b37894227865ca82917013"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/NoiseAPI.java": {
+    "mtime": 1786200803.7909758,
+    "ast_hash": "da703bead4fb875f3f9bcd8c297b15c0",
+    "semantic_hash": "da703bead4fb875f3f9bcd8c297b15c0"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/PaletteAPI.java": {
+    "mtime": 1786200803.7919757,
+    "ast_hash": "dad52dbb4ee20e1aef8df15b54df937e",
+    "semantic_hash": "dad52dbb4ee20e1aef8df15b54df937e"
+  },
+  "main/java/com/xXseesXx/patternwand/patterns/scripted/api/UtilAPI.java": {
+    "mtime": 1786200803.7919757,
+    "ast_hash": "7250213f77e861a0619f9463a84e5a19",
+    "semantic_hash": "7250213f77e861a0619f9463a84e5a19"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_context_bounds.lua": {
+    "mtime": 1786210302.9881535,
+    "ast_hash": "bcb26efbcc5daafc4508e8db51361439",
+    "semantic_hash": "bcb26efbcc5daafc4508e8db51361439"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_context_click.lua": {
+    "mtime": 1786210302.9882438,
+    "ast_hash": "b83a415fb83467ab3520d7f615d00e7c",
+    "semantic_hash": "b83a415fb83467ab3520d7f615d00e7c"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_context_orientation.lua": {
+    "mtime": 1786210302.9883294,
+    "ast_hash": "9939034e45286a4d40eff94d18abcbb4",
+    "semantic_hash": "9939034e45286a4d40eff94d18abcbb4"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_context_time.lua": {
+    "mtime": 1786210302.9884048,
+    "ast_hash": "e1028b4cd67cc921542062149e8e30ed",
+    "semantic_hash": "e1028b4cd67cc921542062149e8e30ed"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_debug.lua": {
+    "mtime": 1786210302.9885821,
+    "ast_hash": "149aaf372200b997c1b1bd6b336d223d",
+    "semantic_hash": "149aaf372200b997c1b1bd6b336d223d"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_geometry_box.lua": {
+    "mtime": 1786210302.9874728,
+    "ast_hash": "953beaaa973cd4cfabbb4c0d954de8c6",
+    "semantic_hash": "953beaaa973cd4cfabbb4c0d954de8c6"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_geometry_rotate2d.lua": {
+    "mtime": 1786210302.9875817,
+    "ast_hash": "14ce39451d021dcfcb0e92c070ee8fd6",
+    "semantic_hash": "14ce39451d021dcfcb0e92c070ee8fd6"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_geometry_rotate_face.lua": {
+    "mtime": 1786210302.9876742,
+    "ast_hash": "a03dc4e5abefb8f765532dff1888fd87",
+    "semantic_hash": "a03dc4e5abefb8f765532dff1888fd87"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_geometry_sphere.lua": {
+    "mtime": 1786215972.2712588,
+    "ast_hash": "c1b5b2d49d9cf41d467e7e9a0197d270",
+    "semantic_hash": "c1b5b2d49d9cf41d467e7e9a0197d270"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_metadata_ignore.lua": {
+    "mtime": 1786210302.98866,
+    "ast_hash": "9d3ecdc3ee2c233c58d5e927af7ca2dd",
+    "semantic_hash": "9d3ecdc3ee2c233c58d5e927af7ca2dd"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_noise_perlin2d.lua": {
+    "mtime": 1786210302.9869654,
+    "ast_hash": "7c8a71747ee9defece9204f8284301f9",
+    "semantic_hash": "7c8a71747ee9defece9204f8284301f9"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_noise_perlin3d.lua": {
+    "mtime": 1786210302.9870906,
+    "ast_hash": "9d7c7efecf573e3bc46e1a0f2b0a826d",
+    "semantic_hash": "9d7c7efecf573e3bc46e1a0f2b0a826d"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_noise_simplex2d.lua": {
+    "mtime": 1786215965.376142,
+    "ast_hash": "a69781bdd3c443dd77045b86288968ad",
+    "semantic_hash": "a69781bdd3c443dd77045b86288968ad"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_noise_simplex3d.lua": {
+    "mtime": 1786210302.9872417,
+    "ast_hash": "410238fdf4ade95f74339fdbb7004856",
+    "semantic_hash": "410238fdf4ade95f74339fdbb7004856"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_palette_exclude.lua": {
+    "mtime": 1786210302.9867182,
+    "ast_hash": "b9c96a05ce6d849f3c49fa16feb9ddf4",
+    "semantic_hash": "b9c96a05ce6d849f3c49fa16feb9ddf4"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_palette_range.lua": {
+    "mtime": 1786210302.9864228,
+    "ast_hash": "9ad27bf95876599b61b5967e8fb84ca8",
+    "semantic_hash": "9ad27bf95876599b61b5967e8fb84ca8"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_palette_uniform.lua": {
+    "mtime": 1786210302.9865808,
+    "ast_hash": "d502db65f0737c52d72c2b2209e73003",
+    "semantic_hash": "d502db65f0737c52d72c2b2209e73003"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_palette_weighted.lua": {
+    "mtime": 1786210302.985767,
+    "ast_hash": "e4f3cc987959fcd9689e307ba35ece47",
+    "semantic_hash": "e4f3cc987959fcd9689e307ba35ece47"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_params_types.lua": {
+    "mtime": 1786215957.7870135,
+    "ast_hash": "fd879953e99749b45e57ae269685d74e",
+    "semantic_hash": "fd879953e99749b45e57ae269685d74e"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_seed.lua": {
+    "mtime": 1786210302.98873,
+    "ast_hash": "0ccc541d2877f66a2ca60fb59536b600",
+    "semantic_hash": "0ccc541d2877f66a2ca60fb59536b600"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_skip_blocks.lua": {
+    "mtime": 1786210302.9888005,
+    "ast_hash": "a5a39f1ed3669fdbe6fe40f28fae9c0a",
+    "semantic_hash": "a5a39f1ed3669fdbe6fe40f28fae9c0a"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_util_distance.lua": {
+    "mtime": 1786210302.9877882,
+    "ast_hash": "2a5dedd3c0055b1403a9ee711f193725",
+    "semantic_hash": "2a5dedd3c0055b1403a9ee711f193725"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_util_hash.lua": {
+    "mtime": 1786210302.9880557,
+    "ast_hash": "d08d186c5e159e9ca9426c9a9ff6efcb",
+    "semantic_hash": "d08d186c5e159e9ca9426c9a9ff6efcb"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_util_math.lua": {
+    "mtime": 1786210302.9878855,
+    "ast_hash": "92e5b306171e4961a21d87820951c61f",
+    "semantic_hash": "92e5b306171e4961a21d87820951c61f"
+  },
+  "main/resources/assets/patternwand/patterns/examples/default_util_smoothstep.lua": {
+    "mtime": 1786210302.9879735,
+    "ast_hash": "af75260baa91d1761ff8d54dd3ddfb03",
+    "semantic_hash": "af75260baa91d1761ff8d54dd3ddfb03"
+  },
+  "test/java/com/xXseesXx/patternwand/DebugTest.java": {
+    "mtime": 1786187770.4069824,
+    "ast_hash": "a0f7d6e2f4dbca636818090285b101cd",
+    "semantic_hash": "a0f7d6e2f4dbca636818090285b101cd"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/PatternScriptLoaderTest.java": {
+    "mtime": 1786210737.884452,
+    "ast_hash": "3780918b09e13db595f14d21ecaa209a",
+    "semantic_hash": "3780918b09e13db595f14d21ecaa209a"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/PlacementContextTest.java": {
+    "mtime": 1786200803.7919757,
+    "ast_hash": "e56141fb37703f8770b43f1272df23d6",
+    "semantic_hash": "e56141fb37703f8770b43f1272df23d6"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/ScriptEngineTest.java": {
+    "mtime": 1786187770.4071953,
+    "ast_hash": "b06627e8b90708dc0b4c2ede16dbdbb0",
+    "semantic_hash": "b06627e8b90708dc0b4c2ede16dbdbb0"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/api/DebugAPITest.java": {
+    "mtime": 1786200803.7919757,
+    "ast_hash": "11b4ddd729828786cb0d61b700614953",
+    "semantic_hash": "11b4ddd729828786cb0d61b700614953"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/api/NoiseAPITest.java": {
+    "mtime": 1786200803.792976,
+    "ast_hash": "7eef20fc5239756439a135e8dc446ef9",
+    "semantic_hash": "7eef20fc5239756439a135e8dc446ef9"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/api/PaletteAPITest.java": {
+    "mtime": 1786200803.792976,
+    "ast_hash": "594574342fb809eedbc9e0abfe61e5d0",
+    "semantic_hash": "594574342fb809eedbc9e0abfe61e5d0"
+  },
+  "test/java/com/xXseesXx/patternwand/patterns/scripted/api/UtilAPITest.java": {
+    "mtime": 1786200803.7939758,
+    "ast_hash": "70075557c37cde570325e61d449da2e6",
+    "semantic_hash": "70075557c37cde570325e61d449da2e6"
+  }
+}
