@@ -208,6 +208,52 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
         PatternPalette palette = getPalette(itemstack);
         int paletteSize = palette.size();
         lines.add(StatCollector.translateToLocal("patternwand.palette") + ": " + paletteSize + " blocks");
+
+        // Add active pattern info
+        if (itemstack.hasTagCompound()) {
+            NBTTagCompound tag = itemstack.getTagCompound();
+            if (tag.hasKey("activePattern")) {
+                String patternName = tag.getString("activePattern");
+                lines.add("§bPattern: §f" + patternName);
+
+                // Show parameters if any
+                if (tag.hasKey("patternParams", Constants.NBT.TAG_COMPOUND)) {
+                    NBTTagCompound params = tag.getCompoundTag("patternParams");
+                    if (!params.hasNoTags()) {
+                        lines.add("§7Parameters:");
+                        for (Object keyObj : params.func_150296_c()) {
+                            String key = (String) keyObj;
+                            String value = getParamValueAsString(params, key);
+                            lines.add("  §7" + key + ": §f" + value);
+                        }
+                    }
+                }
+            } else {
+                lines.add("§7No pattern selected");
+            }
+        } else {
+            lines.add("§7No pattern selected");
+        }
+    }
+
+    /**
+     * Get NBT parameter value as string for display.
+     */
+    private String getParamValueAsString(NBTTagCompound params, String key) {
+        byte type = params.getTagId(key);
+        switch (type) {
+            case Constants.NBT.TAG_INT:
+                return String.valueOf(params.getInteger(key));
+            case Constants.NBT.TAG_DOUBLE:
+            case Constants.NBT.TAG_FLOAT:
+                return String.format("%.2f", params.getDouble(key));
+            case Constants.NBT.TAG_BYTE:
+                return params.getBoolean(key) ? "true" : "false";
+            case Constants.NBT.TAG_STRING:
+                return params.getString(key);
+            default:
+                return params.toString();
+        }
     }
 
     @Override
