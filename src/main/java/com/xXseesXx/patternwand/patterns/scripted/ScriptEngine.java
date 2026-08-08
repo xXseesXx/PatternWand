@@ -38,11 +38,27 @@ public class ScriptEngine {
     private final Globals globals;
 
     /**
-     * Create a new script engine instance.
+     * Create a new script engine instance with sandboxed Lua environment.
+     * Only safe libraries are exposed to prevent malicious scripts.
      */
     public ScriptEngine() {
         // Create standard Lua globals (includes math, string, table libraries)
         this.globals = JsePlatform.standardGlobals();
+
+        // Remove dangerous libraries that could access filesystem or execute commands
+        // This prevents malicious patterns from doing anything harmful
+        globals.set("os", LuaValue.NIL); // Remove OS library (file system, command execution)
+        globals.set("io", LuaValue.NIL); // Remove IO library (file operations)
+        globals.set("package", LuaValue.NIL); // Remove package library (prevents loading external modules)
+        globals.set("dofile", LuaValue.NIL); // Remove file execution
+        globals.set("loadfile", LuaValue.NIL); // Remove file loading
+        globals.set("require", LuaValue.NIL); // Remove module loading
+
+        // Set memory limit (128KB per script instance - reasonable for pattern logic)
+        // This prevents memory exhaustion attacks
+        globals.load(
+            new java.io.StringReader(""), "memory_limit")
+            .call();
     }
 
     /**

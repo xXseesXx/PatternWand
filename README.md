@@ -2,6 +2,23 @@
 
 A Minecraft 1.7.10 addon for [BetterBuildersWands](https://github.com/GTNewHorizons/BetterBuildersWands) that adds Lua scripting support for custom building patterns.
 
+## ⚠️ Security Warning
+
+**Only use pattern scripts from sources you trust!**
+
+While PatternWand implements security measures (sandboxed Lua environment, execution timeouts, removed dangerous libraries), pattern scripts are still code that runs on your computer. Malicious patterns could potentially:
+- Cause game lag or crashes through computationally expensive operations
+- Consume excessive memory
+- Exploit unforeseen vulnerabilities
+
+**Best Practices:**
+- Only download patterns from trusted sources (official repository, known mod authors)
+- Review pattern code before using it if you're technically inclined
+- Test new patterns in creative/single-player before using on servers
+- Report suspicious patterns to the mod author
+
+The included example patterns are safe and can be used as templates for creating your own.
+
 ## Features
 
 - **Lua Scripting**: Create custom building patterns using Lua scripts
