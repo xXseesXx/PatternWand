@@ -240,19 +240,17 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
      * Get NBT parameter value as string for display.
      */
     private String getParamValueAsString(NBTTagCompound params, String key) {
-        byte type = params.getTagId(key);
-        switch (type) {
-            case Constants.NBT.TAG_INT:
-                return String.valueOf(params.getInteger(key));
-            case Constants.NBT.TAG_DOUBLE:
-            case Constants.NBT.TAG_FLOAT:
-                return String.format("%.2f", params.getDouble(key));
-            case Constants.NBT.TAG_BYTE:
-                return params.getBoolean(key) ? "true" : "false";
-            case Constants.NBT.TAG_STRING:
-                return params.getString(key);
-            default:
-                return params.toString();
+        // Try each type in order
+        if (params.hasKey(key, Constants.NBT.TAG_STRING)) {
+            return params.getString(key);
+        } else if (params.hasKey(key, Constants.NBT.TAG_INT)) {
+            return String.valueOf(params.getInteger(key));
+        } else if (params.hasKey(key, Constants.NBT.TAG_DOUBLE) || params.hasKey(key, Constants.NBT.TAG_FLOAT)) {
+            return String.format("%.2f", params.getDouble(key));
+        } else if (params.hasKey(key, Constants.NBT.TAG_BYTE)) {
+            return params.getBoolean(key) ? "true" : "false";
+        } else {
+            return "?";
         }
     }
 
