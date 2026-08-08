@@ -26,5 +26,7 @@ logs/
 Thumbs.db
 
 # AI
-.kiro
-.claude
+.kiro/
+.claude/
+
+graphify-out/
