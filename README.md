@@ -1,4 +1,5 @@
 # PatternWand
+![](YouDontNeedTasteWhenYouHaveMath.png)
 
 A Minecraft 1.7.10 addon for [BetterBuildersWands](https://github.com/GTNewHorizons/BetterBuildersWands) that adds Lua scripting support for custom building patterns.
 
