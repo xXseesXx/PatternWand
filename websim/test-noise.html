@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Noise Test</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #4ec9b0; padding: 20px; }
+        canvas { border: 1px solid #4ec9b0; margin: 10px 0; image-rendering: pixelated; }
+        .pass { color: #4ec9b0; }
+        .fail { color: #f48771; }
+    </style>
+</head>
+<body>
+    <h1>Noise Test</h1>
+    <div id="output"></div>
+    <h2>Perlin Noise Visualization</h2>
+    <canvas id="perlinCanvas" width="256" height="256"></canvas>
+    <h2>Simplex Noise Visualization</h2>
+    <canvas id="simplexCanvas" width="256" height="256"></canvas>
+
+    <script src="lib/perlin.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/4.0.1/simplex-noise.min.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(msg, isError = false) {
+            const div = document.createElement('div');
+            div.className = isError ? 'fail' : 'pass';
+            div.textContent = msg;
+            output.appendChild(div);
+            console.log(msg);
+        }
+
+        // Test 1: PerlinNoise class exists
+        log('Test 1: PerlinNoise class...');
+        if (typeof PerlinNoise === 'undefined') {
+            log('  ❌ FAILED: PerlinNoise not defined', true);
+        } else {
+            log('  ✓ OK: PerlinNoise defined');
+        }
+
+        // Test 2: Create PerlinNoise instance
+        log('Test 2: Create PerlinNoise instance...');
+        let perlin;
+        try {
+            perlin = new PerlinNoise(12345);
+            log('  ✓ OK: Instance created');
+        } catch (e) {
+            log('  ❌ FAILED: ' + e.message, true);
+        }
+
+        // Test 3: Call noise2D
+        log('Test 3: Call noise2D(0.5, 0.5)...');
+        try {
+            const value = perlin.noise2D(0.5, 0.5);
+            log('  Value: ' + value);
+            log('  Type: ' + typeof value);
+            log('  Is NaN: ' + isNaN(value));
+            
+            if (isNaN(value)) {
+                log('  ❌ FAILED: Returned NaN', true);
+            } else if (value < -1 || value > 1) {
+                log('  ❌ FAILED: Out of range [-1, 1]', true);
+            } else {
+                log('  ✓ OK: Valid noise value');
+            }
+        } catch (e) {
+            log('  ❌ FAILED: ' + e.message, true);
+        }
+
+        // Test 4: Multiple calls
+        log('Test 4: Multiple noise2D calls...');
+        try {
+            let sum = 0;
+            let nanCount = 0;
+            for (let i = 0; i < 10; i++) {
+                const val = perlin.noise2D(i * 0.1, i * 0.1);
+                if (isNaN(val)) nanCount++;
+                else sum += val;
+            }
+            log('  Calls: 10');
+            log('  NaN count: ' + nanCount);
+            log('  Average: ' + (sum / (10 - nanCount)));
+            
+            if (nanCount === 0) {
+                log('  ✓ OK: No NaN values');
+            } else {
+                log('  ❌ FAILED: ' + nanCount + ' NaN values', true);
+            }
+        } catch (e) {
+            log('  ❌ FAILED: ' + e.message, true);
+        }
+
+        // Test 5: SimplexNoise
+        log('Test 5: SimplexNoise...');
+        if (typeof SimplexNoise === 'undefined') {
+            log('  ⚠ WARNING: SimplexNoise not loaded (CDN issue?)');
+        } else {
+            try {
+                const simplex = new SimplexNoise('12345');
+                const value = simplex.noise2D(0.5, 0.5);
+                log('  Value: ' + value);
+                if (isNaN(value)) {
+                    log('  ❌ FAILED: Returned NaN', true);
+                } else {
+                    log('  ✓ OK: SimplexNoise works');
+                }
+            } catch (e) {
+                log('  ❌ FAILED: ' + e.message, true);
+            }
+        }
+
+        // Visual test: Render noise to canvas
+        log('Rendering Perlin noise to canvas...');
+        try {
+            const canvas = document.getElementById('perlinCanvas');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(256, 256);
+            
+            for (let y = 0; y < 256; y++) {
+                for (let x = 0; x < 256; x++) {
+                    const noise = perlin.noise2D(x * 0.05, y * 0.05);
+                    const value = Math.floor((noise + 1) * 127.5); // Map [-1,1] to [0,255]
+                    
+                    const idx = (y * 256 + x) * 4;
+                    imageData.data[idx] = value;     // R
+                    imageData.data[idx + 1] = value; // G
+                    imageData.data[idx + 2] = value; // B
+                    imageData.data[idx + 3] = 255;   // A
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            log('  ✓ Perlin visualization rendered');
+        } catch (e) {
+            log('  ❌ Failed to render: ' + e.message, true);
+        }
+
+        // Render SimplexNoise if available
+        if (typeof SimplexNoise !== 'undefined') {
+            log('Rendering Simplex noise to canvas...');
+            try {
+                const simplex = new SimplexNoise('12345');
+                const canvas = document.getElementById('simplexCanvas');
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.createImageData(256, 256);
+                
+                for (let y = 0; y < 256; y++) {
+                    for (let x = 0; x < 256; x++) {
+                        const noise = simplex.noise2D(x * 0.05, y * 0.05);
+                        const value = Math.floor((noise + 1) * 127.5);
+                        
+                        const idx = (y * 256 + x) * 4;
+                        imageData.data[idx] = value;
+                        imageData.data[idx + 1] = value;
+                        imageData.data[idx + 2] = value;
+                        imageData.data[idx + 3] = 255;
+                    }
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                log('  ✓ Simplex visualization rendered');
+            } catch (e) {
+                log('  ❌ Failed to render: ' + e.message, true);
+            }
+        }
+
+        log('=== Tests Complete ===');
+        log('If you see cloudy patterns in the canvases above, noise is working!');
+    </script>
+</body>
+</html>

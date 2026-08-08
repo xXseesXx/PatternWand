@@ -94,22 +94,18 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
             // Get the palette for matching
             PatternPalette palette = getPalette(itemstack);
 
-            // Create block matcher using palette
-            BlockMatcher matcher = new BlockMatcher(palette);
-
-            // Get blocks that match the palette at clicked position
-            ItemStack sourceItems = getProperItemStack(worldShim, playerShim, clickedPos, matcher);
+            // Get blocks that match the palette at clicked position (using metadata-ignoring matcher)
+            ItemStack sourceItems = getProperItemStack(worldShim, playerShim, clickedPos, palette);
 
             if (sourceItems != null && sourceItems.getItem() instanceof ItemBlock) {
                 int numBlocks = Math.min(wand.getMaxBlocks(itemstack), playerShim.countItems(sourceItems, false));
 
-                // Use modified WandWorker that accepts block matcher
+                // Use modified WandWorker that ignores block metadata/rotation
                 PatternWandWorker worker = new PatternWandWorker(
                     this.wand,
                     playerShim,
                     worldShim,
                     palette,
-                    matcher,
                     itemstack, // Pass wand item for pattern access
                     clickedPos // Pass origin for relative coordinates
                 );
@@ -151,14 +147,17 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
     }
 
     /**
-     * Get the proper item stack for placement using palette matching.
+     * Get the proper item stack for placement using palette matching (ignores metadata/rotation).
      */
     private ItemStack getProperItemStack(IWorldShim worldShim, IPlayerShim playerShim, Point3d clickedPos,
-        BlockMatcher matcher) {
+        PatternPalette palette) {
         Block worldBlock = worldShim.getBlock(clickedPos);
         int worldMeta = worldShim.getMetadata(clickedPos);
 
-        // Check if clicked block is in palette
+        // Create a metadata-ignoring matcher for checking if block is in palette
+        BlockMatcher matcher = new BlockMatcher(palette, true); // true = ignore metadata/rotation
+
+        // Check if clicked block is in palette (ignoring rotation/metadata)
         if (matcher.matches(worldBlock, worldMeta)) {
             return new ItemStack(worldBlock, 1, worldMeta);
         }
@@ -209,6 +208,50 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
         PatternPalette palette = getPalette(itemstack);
         int paletteSize = palette.size();
         lines.add(StatCollector.translateToLocal("patternwand.palette") + ": " + paletteSize + " blocks");
+
+        // Add active pattern info
+        if (itemstack.hasTagCompound()) {
+            NBTTagCompound tag = itemstack.getTagCompound();
+            if (tag.hasKey("activePattern")) {
+                String patternName = tag.getString("activePattern");
+                lines.add("§bPattern: §f" + patternName);
+
+                // Show parameters if any
+                if (tag.hasKey("patternParams", Constants.NBT.TAG_COMPOUND)) {
+                    NBTTagCompound params = tag.getCompoundTag("patternParams");
+                    if (!params.hasNoTags()) {
+                        lines.add("§7Parameters:");
+                        for (Object keyObj : params.func_150296_c()) {
+                            String key = (String) keyObj;
+                            String value = getParamValueAsString(params, key);
+                            lines.add("  §7" + key + ": §f" + value);
+                        }
+                    }
+                }
+            } else {
+                lines.add("§7No pattern selected");
+            }
+        } else {
+            lines.add("§7No pattern selected");
+        }
+    }
+
+    /**
+     * Get NBT parameter value as string for display.
+     */
+    private String getParamValueAsString(NBTTagCompound params, String key) {
+        // Try each type in order
+        if (params.hasKey(key, Constants.NBT.TAG_STRING)) {
+            return params.getString(key);
+        } else if (params.hasKey(key, Constants.NBT.TAG_INT)) {
+            return String.valueOf(params.getInteger(key));
+        } else if (params.hasKey(key, Constants.NBT.TAG_DOUBLE) || params.hasKey(key, Constants.NBT.TAG_FLOAT)) {
+            return String.format("%.2f", params.getDouble(key));
+        } else if (params.hasKey(key, Constants.NBT.TAG_BYTE)) {
+            return params.getBoolean(key) ? "true" : "false";
+        } else {
+            return "?";
+        }
     }
 
     @Override

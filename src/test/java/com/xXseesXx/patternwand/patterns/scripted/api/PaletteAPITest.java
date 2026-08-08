@@ -261,4 +261,241 @@ public class PaletteAPITest {
         palette = new PaletteAPI(mockPalette, TEST_SEED);
         assertTrue(palette.isEmpty(0));
     }
+
+    // ========== NEW PALETTE SELECTION METHODS TESTS ==========
+
+    @Test
+    public void testPickUniform() {
+        // Setup palette with different weights
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 64)); // Heavy weight
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 1)); // Light weight
+        mockPalette.setInventorySlotContents(2, new ItemStack(Blocks.dirt, 32)); // Medium weight
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Pick many times and count
+        int count0 = 0;
+        int count1 = 0;
+        int count2 = 0;
+
+        for (int i = 0; i < 3000; i++) {
+            int result = palette.pickUniform();
+            if (result == 0) count0++;
+            else if (result == 1) count1++;
+            else if (result == 2) count2++;
+        }
+
+        // All three should be picked roughly equally (within 20% of expected)
+        int expected = 1000;
+        assertTrue("Slot 0 should be picked ~equally", Math.abs(count0 - expected) < 200);
+        assertTrue("Slot 1 should be picked ~equally", Math.abs(count1 - expected) < 200);
+        assertTrue("Slot 2 should be picked ~equally", Math.abs(count2 - expected) < 200);
+    }
+
+    @Test
+    public void testPickUniformEmptyPalette() {
+        // Empty palette should return 0
+        int result = palette.pickUniform();
+        assertEquals(0, result);
+    }
+
+    @Test
+    public void testPickUniformSingleItem() {
+        mockPalette.setInventorySlotContents(5, new ItemStack(Blocks.stone, 64));
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Should always pick the only item
+        for (int i = 0; i < 10; i++) {
+            assertEquals(5, palette.pickUniform());
+        }
+    }
+
+    @Test
+    public void testPickWeightedExceptSingleExclude() {
+        // Setup palette
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+        mockPalette.setInventorySlotContents(2, new ItemStack(Blocks.dirt, 10));
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Exclude index 1
+        for (int i = 0; i < 100; i++) {
+            int result = palette.pickWeightedExcept(new int[] { 1 });
+            assertTrue("Should not pick excluded index", result != 1);
+            assertTrue("Should pick valid index", result == 0 || result == 2);
+        }
+    }
+
+    @Test
+    public void testPickWeightedExceptMultipleExclude() {
+        // Setup palette
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+        mockPalette.setInventorySlotContents(2, new ItemStack(Blocks.dirt, 10));
+        mockPalette.setInventorySlotContents(3, new ItemStack(Blocks.grass, 10));
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Exclude indices 1 and 3
+        for (int i = 0; i < 100; i++) {
+            int result = palette.pickWeightedExcept(new int[] { 1, 3 });
+            assertTrue("Should not pick excluded indices", result != 1 && result != 3);
+            assertTrue("Should pick valid index", result == 0 || result == 2);
+        }
+    }
+
+    @Test
+    public void testPickWeightedExceptEmptyArray() {
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Empty exclusion array should behave like normal pickWeighted
+        boolean[] picked = new boolean[2];
+        for (int i = 0; i < 100; i++) {
+            int result = palette.pickWeightedExcept(new int[] {});
+            picked[result] = true;
+        }
+
+        assertTrue("Should pick both slots", picked[0] && picked[1]);
+    }
+
+    @Test
+    public void testPickWeightedExceptAllExcluded() {
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Exclude all filled slots
+        int result = palette.pickWeightedExcept(new int[] { 0, 1 });
+        assertEquals("Should return 0 when all are excluded", 0, result);
+    }
+
+    @Test
+    public void testPickWeightedExceptNullArray() {
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Null array should behave like normal pickWeighted
+        int result = palette.pickWeightedExcept(null);
+        assertEquals(0, result);
+    }
+
+    @Test
+    public void testPickWeightedRange() {
+        // Setup palette
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+        mockPalette.setInventorySlotContents(2, new ItemStack(Blocks.dirt, 10));
+        mockPalette.setInventorySlotContents(3, new ItemStack(Blocks.grass, 10));
+        mockPalette.setInventorySlotContents(4, new ItemStack(Blocks.sand, 10));
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Pick from range 1-3
+        for (int i = 0; i < 100; i++) {
+            int result = palette.pickWeightedRange(1, 3);
+            assertTrue("Should pick from range", result >= 1 && result <= 3);
+        }
+    }
+
+    @Test
+    public void testPickWeightedRangeSingleSlot() {
+        mockPalette.setInventorySlotContents(5, new ItemStack(Blocks.stone, 10));
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Range with single slot
+        int result = palette.pickWeightedRange(5, 5);
+        assertEquals(5, result);
+    }
+
+    @Test
+    public void testPickWeightedRangeInvalidRange() {
+        mockPalette.setInventorySlotContents(5, new ItemStack(Blocks.stone, 10));
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Min > max should return min
+        int result = palette.pickWeightedRange(10, 5);
+        assertEquals(10, result);
+    }
+
+    @Test
+    public void testPickWeightedRangeClampToValid() {
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Range beyond palette size should be clamped
+        int result = palette.pickWeightedRange(0, 100);
+        assertTrue("Should clamp to valid range", result >= 0 && result < 27);
+    }
+
+    @Test
+    public void testPickWeightedRangeNegative() {
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Negative min should be clamped to 0
+        int result = palette.pickWeightedRange(-5, 1);
+        assertTrue("Should clamp negative to 0", result >= 0 && result <= 1);
+    }
+
+    @Test
+    public void testPickWeightedRangeEmptySlots() {
+        // Fill only some slots
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        // Slots 1-4 are empty
+        mockPalette.setInventorySlotContents(5, new ItemStack(Blocks.cobblestone, 10));
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Range with empty slots should return min if all are empty
+        int result = palette.pickWeightedRange(1, 4);
+        assertEquals("Should return min when range is all empty", 1, result);
+    }
+
+    @Test
+    public void testPickWeightedRangeVariety() {
+        // Fill range with equal weights
+        for (int i = 5; i < 10; i++) {
+            mockPalette.setInventorySlotContents(i, new ItemStack(Blocks.stone, 10));
+        }
+
+        palette = new PaletteAPI(mockPalette, TEST_SEED);
+
+        // Should pick variety from range
+        boolean[] picked = new boolean[10];
+        for (int i = 0; i < 200; i++) {
+            int result = palette.pickWeightedRange(5, 9);
+            picked[result] = true;
+        }
+
+        // Should have picked multiple different slots
+        int pickedCount = 0;
+        for (int i = 5; i < 10; i++) {
+            if (picked[i]) pickedCount++;
+        }
+        assertTrue("Should pick variety from range", pickedCount >= 3);
+    }
+
+    @Test
+    public void testNewMethodsDeterministic() {
+        // Setup palette
+        mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 10));
+        mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 10));
+        mockPalette.setInventorySlotContents(2, new ItemStack(Blocks.dirt, 10));
+
+        PaletteAPI palette1 = new PaletteAPI(mockPalette, 99999L);
+        PaletteAPI palette2 = new PaletteAPI(mockPalette, 99999L);
+
+        // Same seed should produce same results
+        for (int i = 0; i < 20; i++) {
+            assertEquals(palette1.pickUniform(), palette2.pickUniform());
+            assertEquals(palette1.pickWeightedExcept(new int[] { 1 }), palette2.pickWeightedExcept(new int[] { 1 }));
+            assertEquals(palette1.pickWeightedRange(0, 2), palette2.pickWeightedRange(0, 2));
+        }
+    }
 }

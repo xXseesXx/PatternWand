@@ -69,6 +69,63 @@ public class LuaPaletteWrapper {
             }
         });
 
+        // Pick uniform random slot: palette.pickUniform()
+        // Returns 0-based index (0-26)
+        table.set("pickUniform", new ZeroArgFunction() {
+
+            @Override
+            public LuaValue call() {
+                return LuaValue.valueOf(api.pickUniform());
+            }
+        });
+
+        // Pick weighted random excluding indices: palette.pickWeightedExcept(indices)
+        // indices can be a single number or a table of numbers
+        table.set("pickWeightedExcept", new OneArgFunction() {
+
+            @Override
+            public LuaValue call(LuaValue indices) {
+                int[] excludeArray;
+
+                if (indices.isnumber()) {
+                    // Single index
+                    excludeArray = new int[] { indices.toint() };
+                } else if (indices.istable()) {
+                    // Table of indices
+                    LuaTable table = indices.checktable();
+                    java.util.List<Integer> list = new java.util.ArrayList<Integer>();
+                    int i = 1;
+                    while (true) {
+                        LuaValue val = table.get(i);
+                        if (val.isnil()) break;
+                        if (val.isnumber()) {
+                            list.add(val.toint());
+                        }
+                        i++;
+                    }
+                    excludeArray = new int[list.size()];
+                    for (int j = 0; j < list.size(); j++) {
+                        excludeArray[j] = list.get(j);
+                    }
+                } else {
+                    excludeArray = new int[0];
+                }
+
+                return LuaValue.valueOf(api.pickWeightedExcept(excludeArray));
+            }
+        });
+
+        // Pick weighted random from range: palette.pickWeightedRange(min, max)
+        table.set("pickWeightedRange", new org.luaj.vm2.lib.TwoArgFunction() {
+
+            @Override
+            public LuaValue call(LuaValue minVal, LuaValue maxVal) {
+                int min = minVal.toint();
+                int max = maxVal.toint();
+                return LuaValue.valueOf(api.pickWeightedRange(min, max));
+            }
+        });
+
         return table;
     }
 }

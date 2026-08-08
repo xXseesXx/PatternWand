@@ -10,10 +10,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 
+import com.xXseesXx.patternwand.Config;
 import com.xXseesXx.patternwand.PatternWandMod;
 import com.xXseesXx.patternwand.items.ItemPatternWandUnbreakable;
 import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
 import com.xXseesXx.patternwand.patterns.scripted.PatternScriptLoader;
+import com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI;
 
 /**
  * Command for managing pattern scripts.
@@ -38,7 +40,7 @@ public class PatternWandCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/patternwand <reload|list|set <pattern>|info|seed <value>|clearseed>";
+        return "/patternwand <reload|list|set <pattern>|info|seed <value>|clearseed|debug <on|off>>";
     }
 
     @Override
@@ -66,10 +68,14 @@ public class PatternWandCommand extends CommandBase {
 
             case "set":
                 if (args.length < 2) {
-                    sender.addChatMessage(new ChatComponentText("§cUsage: /patternwand set <pattern>"));
+                    sender
+                        .addChatMessage(new ChatComponentText("§cUsage: /patternwand set <pattern> [param=value ...]"));
                     return;
                 }
-                handleSet(sender, args[1]);
+                // Pass all remaining args as potential parameters
+                String[] paramArgs = new String[args.length - 2];
+                System.arraycopy(args, 2, paramArgs, 0, args.length - 2);
+                handleSet(sender, args[1], paramArgs);
                 break;
 
             case "info":
@@ -86,6 +92,14 @@ public class PatternWandCommand extends CommandBase {
 
             case "clearseed":
                 handleClearSeed(sender);
+                break;
+
+            case "debug":
+                if (args.length < 2) {
+                    sender.addChatMessage(new ChatComponentText("§cUsage: /patternwand debug <on|off>"));
+                    return;
+                }
+                handleDebug(sender, args[1]);
                 break;
 
             default:
@@ -123,7 +137,7 @@ public class PatternWandCommand extends CommandBase {
         }
     }
 
-    private void handleSet(ICommandSender sender, String patternName) {
+    private void handleSet(ICommandSender sender, String patternName, String[] paramArgs) {
         if (!(sender instanceof EntityPlayer)) {
             sender.addChatMessage(new ChatComponentText("§cThis command can only be used by players"));
             return;
@@ -157,7 +171,66 @@ public class PatternWandCommand extends CommandBase {
 
         tag.setString("activePattern", scriptName);
 
-        sender.addChatMessage(new ChatComponentText("§aSet active pattern to: §f" + patternName));
+        // Parse and store parameters
+        NBTTagCompound paramsTag = new NBTTagCompound();
+        int paramCount = 0;
+
+        for (String paramArg : paramArgs) {
+            // Support both = and : as separators
+            String[] parts = paramArg.split("[=:]", 2);
+            if (parts.length == 2) {
+                String paramName = parts[0].trim();
+                String paramValue = parts[1].trim();
+
+                // Validate parameter exists in metadata
+                com.xXseesXx.patternwand.patterns.scripted.PatternParameter param = script.metadata
+                    .getParameter(paramName);
+                if (param != null) {
+                    // Store parameter value based on type
+                    try {
+                        Object validatedValue = param.validate(paramValue);
+                        if (validatedValue instanceof Integer) {
+                            paramsTag.setInteger(paramName, (Integer) validatedValue);
+                        } else if (validatedValue instanceof Number) {
+                            paramsTag.setDouble(paramName, ((Number) validatedValue).doubleValue());
+                        } else if (validatedValue instanceof Boolean) {
+                            paramsTag.setBoolean(paramName, (Boolean) validatedValue);
+                        } else if (validatedValue instanceof String) {
+                            paramsTag.setString(paramName, (String) validatedValue);
+                        }
+                        paramCount++;
+                    } catch (IllegalArgumentException e) {
+                        sender.addChatMessage(
+                            new ChatComponentText(
+                                "§cInvalid value for parameter '" + paramName + "': " + e.getMessage()));
+                    }
+                } else {
+                    sender.addChatMessage(
+                        new ChatComponentText("§eWarning: Unknown parameter '" + paramName + "' (ignored)"));
+                }
+            }
+        }
+
+        // Store parameters in NBT
+        if (paramCount > 0) {
+            tag.setTag("patternParams", paramsTag);
+            sender.addChatMessage(
+                new ChatComponentText(
+                    "§aSet active pattern to: §f" + patternName + " §7with " + paramCount + " parameter(s)"));
+        } else {
+            // Remove old parameters if none provided
+            tag.removeTag("patternParams");
+            sender.addChatMessage(new ChatComponentText("§aSet active pattern to: §f" + patternName));
+        }
+
+        // Show parameter info if pattern has parameters
+        if (script.metadata.hasParameters() && paramCount == 0) {
+            sender.addChatMessage(new ChatComponentText("§7Available parameters:"));
+            for (com.xXseesXx.patternwand.patterns.scripted.PatternParameter param : script.metadata.getParameters()) {
+                sender.addChatMessage(
+                    new ChatComponentText("  §e" + param.getName() + " §7(default: " + param.getDefaultValue() + ")"));
+            }
+        }
     }
 
     private void handleInfo(ICommandSender sender) {
@@ -191,8 +264,7 @@ public class PatternWandCommand extends CommandBase {
             long seed = tag.getLong("patternSeed");
             sender.addChatMessage(new ChatComponentText("§aCustom seed: §f" + seed));
         } else {
-            long worldSeed = player.worldObj.getSeed();
-            sender.addChatMessage(new ChatComponentText("§7Using world seed: §f" + worldSeed));
+            sender.addChatMessage(new ChatComponentText("§7Using default seed: §f" + Config.defaultPatternSeed));
         }
     }
 
@@ -250,9 +322,28 @@ public class PatternWandCommand extends CommandBase {
         if (tag != null && tag.hasKey("patternSeed")) {
             tag.removeTag("patternSeed");
             sender.addChatMessage(new ChatComponentText("§aCleared custom seed"));
-            sender.addChatMessage(new ChatComponentText("§7Now using world seed: §f" + player.worldObj.getSeed()));
+            sender.addChatMessage(new ChatComponentText("§7Now using default seed: §f" + Config.defaultPatternSeed));
         } else {
             sender.addChatMessage(new ChatComponentText("§eNo custom seed was set"));
+        }
+    }
+
+    private void handleDebug(ICommandSender sender, String mode) {
+        String lowerMode = mode.toLowerCase();
+
+        if (lowerMode.equals("on") || lowerMode.equals("true") || lowerMode.equals("enable")) {
+            DebugAPI.setDebugEnabled(true);
+            sender.addChatMessage(new ChatComponentText("§aDebug mode enabled"));
+            sender.addChatMessage(
+                new ChatComponentText("§7Pattern scripts can now output debug messages using debug.print()"));
+            sender.addChatMessage(new ChatComponentText("§7Pattern execution timing will be tracked and displayed"));
+        } else if (lowerMode.equals("off") || lowerMode.equals("false") || lowerMode.equals("disable")) {
+            DebugAPI.setDebugEnabled(false);
+            sender.addChatMessage(new ChatComponentText("§eDebug mode disabled"));
+        } else {
+            sender.addChatMessage(new ChatComponentText("§cUsage: /patternwand debug <on|off>"));
+            sender.addChatMessage(
+                new ChatComponentText("§7Current status: " + (DebugAPI.isDebugEnabled() ? "§aenabled" : "§cdisabled")));
         }
     }
 
@@ -260,7 +351,15 @@ public class PatternWandCommand extends CommandBase {
     public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
             // Tab complete subcommands
-            return getListOfStringsMatchingLastWord(args, "reload", "list", "set", "info", "seed", "clearseed");
+            return getListOfStringsMatchingLastWord(
+                args,
+                "reload",
+                "list",
+                "set",
+                "info",
+                "seed",
+                "clearseed",
+                "debug");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
             // Tab complete pattern names
             String[] scripts = scriptLoader.getScriptNames();
@@ -272,6 +371,64 @@ public class PatternWandCommand extends CommandBase {
             }
 
             return getListOfStringsMatchingLastWord(args, patternNames.toArray(new String[0]));
+        } else if (args.length >= 3 && args[0].equalsIgnoreCase("set")) {
+            // Tab complete parameter names for the selected pattern
+            String patternName = args[1];
+            String scriptName = patternName.endsWith(".lua") ? patternName : patternName + ".lua";
+
+            CompiledScript script = scriptLoader.getScript(scriptName);
+            if (script != null && script.metadata.hasParameters()) {
+                List<String> paramSuggestions = new ArrayList<>();
+
+                // Collect already used parameter names
+                java.util.Set<String> usedParams = new java.util.HashSet<String>();
+                for (int i = 2; i < args.length - 1; i++) {
+                    String[] parts = args[i].split("[=:]", 2);
+                    if (parts.length > 0) {
+                        usedParams.add(parts[0].trim());
+                    }
+                }
+
+                // Suggest parameters that haven't been used yet
+                for (com.xXseesXx.patternwand.patterns.scripted.PatternParameter param : script.metadata
+                    .getParameters()) {
+                    if (!usedParams.contains(param.getName())) {
+                        // Suggest parameter with = syntax
+                        String suggestion = param.getName() + "=";
+                        // Add default value hint based on type
+                        if (param.getType()
+                            == com.xXseesXx.patternwand.patterns.scripted.PatternParameter.Type.BOOLEAN) {
+                            suggestion += "true";
+                        } else {
+                            suggestion += param.getDefaultValue();
+                        }
+                        paramSuggestions.add(suggestion);
+                    }
+                }
+
+                // If current argument contains =, suggest values for boolean parameters
+                String currentArg = args[args.length - 1];
+                if (currentArg.contains("=") || currentArg.contains(":")) {
+                    String[] parts = currentArg.split("[=:]", 2);
+                    if (parts.length >= 1) {
+                        String paramName = parts[0].trim();
+                        com.xXseesXx.patternwand.patterns.scripted.PatternParameter param = script.metadata
+                            .getParameter(paramName);
+                        if (param != null && param.getType()
+                            == com.xXseesXx.patternwand.patterns.scripted.PatternParameter.Type.BOOLEAN) {
+                            // Suggest boolean values
+                            return getListOfStringsMatchingLastWord(args, paramName + "=true", paramName + "=false");
+                        }
+                    }
+                }
+
+                return getListOfStringsMatchingLastWord(
+                    args,
+                    paramSuggestions.toArray(new String[paramSuggestions.size()]));
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("debug")) {
+            // Tab complete debug options
+            return getListOfStringsMatchingLastWord(args, "on", "off");
         }
 
         return null;

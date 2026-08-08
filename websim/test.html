@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PatternWand Simulator - Diagnostics</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #4ec9b0;
+            padding: 20px;
+        }
+        .test { margin: 10px 0; }
+        .pass { color: #4ec9b0; }
+        .fail { color: #f48771; }
+        .warn { color: #dcdcaa; }
+    </style>
+</head>
+<body>
+    <h1>PatternWand Simulator - Diagnostics</h1>
+    <div id="results"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/4.0.1/simplex-noise.min.js"></script>
+    <script src="lib/perlin.js"></script>
+    <script src="patterns/examples.js"></script>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function test(name, fn) {
+            try {
+                const result = fn();
+                const status = result ? 'pass' : 'fail';
+                results.innerHTML += `<div class="test ${status}">✓ ${name}: ${result || 'FAILED'}</div>`;
+                return result;
+            } catch (e) {
+                results.innerHTML += `<div class="test fail">✗ ${name}: ${e.message}</div>`;
+                return false;
+            }
+        }
+        
+        setTimeout(() => {
+            results.innerHTML += '<h2>Dependency Tests</h2>';
+            
+            test('Fengari loaded', () => typeof fengari !== 'undefined' && 'OK');
+            test('SimplexNoise loaded', () => typeof SimplexNoise !== 'undefined' && 'OK');
+            test('PerlinNoise loaded', () => typeof PerlinNoise !== 'undefined' && 'OK');
+            test('EXAMPLES loaded', () => typeof EXAMPLES !== 'undefined' && 'OK');
+            
+            results.innerHTML += '<h2>Lua Runtime Tests</h2>';
+            
+            test('Create Lua state', () => {
+                const L = fengari.lauxlib.luaL_newstate();
+                return L !== null && 'OK';
+            });
+            
+            test('Load Lua code', () => {
+                const L = fengari.lauxlib.luaL_newstate();
+                fengari.lualib.luaL_openlibs(L);
+                const code = 'function test() return 42 end';
+                const status = fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(code));
+                return status === fengari.lua.LUA_OK && 'OK';
+            });
+            
+            test('Execute Lua function', () => {
+                const L = fengari.lauxlib.luaL_newstate();
+                fengari.lualib.luaL_openlibs(L);
+                const code = 'function pattern(x,y,z) return 0 end';
+                fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(code));
+                fengari.lua.lua_pcall(L, 0, 0, 0);
+                
+                fengari.lua.lua_getglobal(L, fengari.to_luastring('pattern'));
+                fengari.lua.lua_pushnumber(L, 0);
+                fengari.lua.lua_pushnumber(L, 0);
+                fengari.lua.lua_pushnumber(L, 0);
+                const status = fengari.lua.lua_pcall(L, 3, 1, 0);
+                
+                if (status === fengari.lua.LUA_OK) {
+                    const result = fengari.lua.lua_tonumber(L, -1);
+                    return result === 0 && 'OK';
+                }
+                return false;
+            });
+            
+            results.innerHTML += '<h2>Noise Tests</h2>';
+            
+            test('PerlinNoise instantiation', () => {
+                const perlin = new PerlinNoise(12345);
+                return perlin !== null && 'OK';
+            });
+            
+            test('PerlinNoise.noise2D', () => {
+                const perlin = new PerlinNoise(12345);
+                const value = perlin.noise2D(0, 0);
+                return value >= -1 && value <= 1 && `OK (value: ${value.toFixed(3)})`;
+            });
+            
+            if (typeof SimplexNoise !== 'undefined') {
+                test('SimplexNoise instantiation', () => {
+                    const simplex = new SimplexNoise('12345');
+                    return simplex !== null && 'OK';
+                });
+                
+                test('SimplexNoise.noise2D', () => {
+                    const simplex = new SimplexNoise('12345');
+                    const value = simplex.noise2D(0, 0);
+                    return value >= -1 && value <= 1 && `OK (value: ${value.toFixed(3)})`;
+                });
+            }
+            
+            results.innerHTML += '<h2>Pattern Examples</h2>';
+            
+            test('EXAMPLES.checkerboard exists', () => EXAMPLES.checkerboard && 'OK');
+            test('EXAMPLES.bricks exists', () => EXAMPLES.bricks && 'OK');
+            
+            results.innerHTML += '<h2>Canvas Tests</h2>';
+            
+            test('Canvas element', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 600;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
+                return ctx !== null && 'OK';
+            });
+            
+            test('Canvas rendering', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 10;
+                canvas.height = 10;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(0, 0, 10, 10);
+                return 'OK';
+            });
+            
+            results.innerHTML += '<h2>Complete</h2>';
+            results.innerHTML += '<p>If all tests passed, the simulator should work correctly.</p>';
+            results.innerHTML += '<p><a href="index.html" style="color: #007acc;">Open Simulator</a></p>';
+            
+        }, 500); // Wait for all scripts to load
+    </script>
+</body>
+</html>

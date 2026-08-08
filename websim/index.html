@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatternWand Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading-indicator">
+            <div class="loading-content">
+                <h2>Loading PatternWand Simulator...</h2>
+                <p>Initializing Lua runtime...</p>
+            </div>
+        </div>
+        
+        <!-- Header -->
+        <header class="header">
+            <h1>PatternWand Simulator</h1>
+            <div class="header-controls">
+                <select id="exampleSelect">
+                    <option value="">Load Test Pattern...</option>
+                    <optgroup label="Basic Tests">
+                        <option value="test_basic">1. Basic (solid color)</option>
+                        <option value="test_coordinates">2. World Coords</option>
+                        <option value="test_relative">3. Relative Coords</option>
+                        <option value="test_math">4. Lua Math</option>
+                        <option value="test_math_mod">5. Lua Modulo</option>
+                    </optgroup>
+                    <optgroup label="Palette API">
+                        <option value="test_palette_size">6. palette.size()</option>
+                        <option value="test_palette_count">7. palette.countNonEmpty()</option>
+                        <option value="test_palette_weighted">8. palette.pickWeighted()</option>
+                        <option value="test_palette_uniform">9. palette.pickUniform()</option>
+                    </optgroup>
+                    <optgroup label="Util API">
+                        <option value="test_util_floor">10. util.floor()</option>
+                        <option value="test_util_mod">11. util.mod()</option>
+                        <option value="test_util_clamp">12. util.clamp()</option>
+                        <option value="test_util_distance">13. util.distance()</option>
+                    </optgroup>
+                    <optgroup label="Noise API">
+                        <option value="test_noise_perlin">14. noise.perlin()</option>
+                        <option value="test_noise_simplex">15. noise.simplex()</option>
+                    </optgroup>
+                    <optgroup label="Parameters">
+                        <option value="test_param_integer">16. Integer Parameter</option>
+                        <option value="test_param_float">17. Float Parameter</option>
+                        <option value="test_param_boolean">18. Boolean Parameter</option>
+                    </optgroup>
+                    <optgroup label="Advanced">
+                        <option value="test_debug">19. Debug API</option>
+                        <option value="test_context">20. Context API</option>
+                    </optgroup>
+                </select>
+                <button id="helpBtn" title="Help">?</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-container">
+            <!-- Editor Panel -->
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span>Pattern Code</span>
+                    <span id="errorIndicator" class="error-indicator hidden"></span>
+                </div>
+                <textarea id="codeEditor" spellcheck="false">-- Simple Checkerboard Pattern
+function pattern(x, y, z, relX, relY, relZ)
+    if (x + z) % 2 == 0 then
+        return 0
+    else
+        return 1
+    end
+end</textarea>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <span>Preview</span>
+                    <div class="preview-controls">
+                        <label>Size: <span id="sizeValue">32</span></label>
+                        <input type="range" id="sizeSlider" min="16" max="128" value="32" step="16">
+                    </div>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="previewCanvas" width="600" height="600"></canvas>
+                    <div id="canvasTooltip" class="canvas-tooltip hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Controls Panel -->
+        <div id="controlsPanel" class="controls-panel">
+            <!-- Palette Section -->
+            <div id="paletteSection" class="control-section">
+                <h3>📦 Palette (27 slots)</h3>
+                <p class="section-help">Click colors to change, adjust weights below each slot</p>
+                <div class="palette-presets">
+                    <label>Presets:</label>
+                    <select id="palettePresetSelect">
+                        <option value="">Custom</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="warm">Warm Colors</option>
+                        <option value="cool">Cool Colors</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="earth">Earth Tones</option>
+                    </select>
+                </div>
+                <div id="paletteEditor" class="palette-grid"></div>
+            </div>
+
+            <!-- Parameters Section -->
+            <div id="parametersSection" class="control-section hidden">
+                <h3>📊 Parameters</h3>
+                <div id="parametersContainer"></div>
+            </div>
+
+            <!-- Context Section -->
+            <div id="contextSection" class="control-section hidden">
+                <h3>📍 Context</h3>
+                <div id="contextContainer">
+                    <label>Seed: <input type="number" id="seedInput" value="12345"></label>
+                    <label>Grid Size: <span id="gridSizeDisplay">32x32</span></label>
+                </div>
+            </div>
+
+            <!-- Debug Section -->
+            <div id="debugSection" class="control-section hidden">
+                <h3>🐛 Debug Output</h3>
+                <div class="debug-controls">
+                    <button id="clearDebugBtn">Clear</button>
+                </div>
+                <pre id="debugConsole" class="debug-console"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/4.0.1/simplex-noise.min.js"></script>
+    <script src="lib/perlin.js"></script>
+    <script src="patterns/examples.js"></script>
+    <script src="engine.js"></script>
+    <script src="renderer.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

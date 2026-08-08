@@ -1,3 +1,6 @@
 dependencies {
     api("com.github.GTNewHorizons:BetterBuildersWands:0.13.11-GTNH:dev")
+    
+    // NEI for development - not included in runtime
+    devOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.8.114-GTNH:dev")
 }

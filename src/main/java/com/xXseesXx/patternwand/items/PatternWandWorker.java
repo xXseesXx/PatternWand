@@ -14,11 +14,13 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.IFluidBlock;
 
+import com.xXseesXx.patternwand.Config;
 import com.xXseesXx.patternwand.PatternWandMod;
 import com.xXseesXx.patternwand.palette.BlockMatcher;
 import com.xXseesXx.patternwand.palette.PaletteEntry;
 import com.xXseesXx.patternwand.palette.PatternPalette;
 import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
+import com.xXseesXx.patternwand.patterns.scripted.PlacementContext;
 import com.xXseesXx.patternwand.patterns.scripted.ScriptExecutionException;
 
 import portablejim.bbw.basics.EnumFluidLock;
@@ -42,6 +44,12 @@ public class PatternWandWorker extends WandWorker {
     private final java.util.HashSet<Point3d> paletteAllCandidates = new java.util.HashSet<>(); // Track visited
                                                                                                // positions
 
+    /**
+     * Create a PatternWandWorker with a custom BlockMatcher.
+     * 
+     * @deprecated Use constructor without matcher parameter instead
+     */
+    @Deprecated
     public PatternWandWorker(IWand wand, IPlayerShim playerShim, IWorldShim worldShim, PatternPalette palette,
         BlockMatcher matcher, ItemStack wandItem, Point3d originPos) {
         super(wand, playerShim, worldShim);
@@ -50,6 +58,31 @@ public class PatternWandWorker extends WandWorker {
         this.wandItem = wandItem;
         this.originPos = originPos;
         this.worldShim = worldShim; // Store reference
+    }
+
+    /**
+     * Create a PatternWandWorker that uses the active pattern's metadata settings for matching.
+     */
+    public PatternWandWorker(IWand wand, IPlayerShim playerShim, IWorldShim worldShim, PatternPalette palette,
+        ItemStack wandItem, Point3d originPos) {
+        super(wand, playerShim, worldShim);
+        this.palette = palette;
+        this.wandItem = wandItem;
+        this.originPos = originPos;
+        this.worldShim = worldShim; // Store reference
+
+        // Determine whether to ignore metadata based on active pattern's metadata
+        boolean ignoreMetadata = false;
+        String activePattern = getActivePattern(wandItem);
+        if (activePattern != null && !activePattern.isEmpty()) {
+            CompiledScript script = PatternWandMod.proxy.getScriptLoader()
+                .getScript(activePattern);
+            if (script != null && script.metadata != null) {
+                ignoreMetadata = script.metadata.shouldIgnoreMetadata();
+            }
+        }
+
+        this.matcher = new BlockMatcher(palette, ignoreMetadata);
     }
 
     /**
@@ -297,6 +330,9 @@ public class PatternWandWorker extends WandWorker {
 
         ArrayList<Point3d> placedBlocks = new ArrayList<>();
 
+        // Start timing for debug mode
+        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPatternTiming();
+
         // Get the compiled pattern script from proxy
         CompiledScript script = PatternWandMod.proxy.getScriptLoader()
             .getScript(patternName);
@@ -312,6 +348,12 @@ public class PatternWandWorker extends WandWorker {
         // Priority: custom seed from NBT > world seed
         long seed = getPatternSeed(itemStack);
 
+        // Extract parameters from wand NBT
+        java.util.Map<String, Object> parameterValues = extractParameters(itemStack, script);
+
+        // Create placement context
+        PlacementContext context = createPlacementContext(clickedPos, blocks, playerShim.getPlayer(), side);
+
         // Get palette entries for quick lookup
         List<PaletteEntry> paletteEntries = palette.getEntries();
 
@@ -326,7 +368,18 @@ public class PatternWandWorker extends WandWorker {
                 // Execute pattern to get palette index
                 int paletteIndex = PatternWandMod.proxy.getScriptLoader()
                     .getEngine()
-                    .executePattern(script, pos.x, pos.y, pos.z, relX, relY, relZ, paletteInventory, seed);
+                    .executePattern(
+                        script,
+                        pos.x,
+                        pos.y,
+                        pos.z,
+                        relX,
+                        relY,
+                        relZ,
+                        paletteInventory,
+                        seed,
+                        parameterValues,
+                        context);
 
                 // -1 means gap (don't place)
                 if (paletteIndex == -1) {
@@ -367,6 +420,9 @@ public class PatternWandWorker extends WandWorker {
             }
         }
 
+        // Finish timing and print summary
+        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.finishPatternTiming();
+
         return placedBlocks;
     }
 
@@ -388,8 +444,8 @@ public class PatternWandWorker extends WandWorker {
 
     /**
      * Get pattern seed for deterministic noise generation.
-     * Uses custom seed from NBT if set, otherwise uses world seed.
-     * This ensures patterns are consistent across the world regardless of click position.
+     * Uses custom seed from NBT if set, otherwise uses configured default seed.
+     * This ensures patterns are consistent across worlds unless a custom seed is set.
      */
     private long getPatternSeed(ItemStack wand) {
         // Check for custom seed in NBT
@@ -400,10 +456,9 @@ public class PatternWandWorker extends WandWorker {
             }
         }
 
-        // Fall back to world seed for deterministic patterns
-        // This ensures the same coordinates always produce the same noise
-        return worldShim.getWorld()
-            .getSeed();
+        // Fall back to configured default seed
+        // This ensures consistent patterns across worlds
+        return Config.defaultPatternSeed;
     }
 
     /**
@@ -422,5 +477,104 @@ public class PatternWandWorker extends WandWorker {
         }
 
         return inventory;
+    }
+
+    /**
+     * Extract parameter values from wand NBT.
+     */
+    private java.util.Map<String, Object> extractParameters(ItemStack wand, CompiledScript script) {
+        java.util.Map<String, Object> paramValues = new java.util.HashMap<String, Object>();
+
+        // Start with default values
+        if (script.metadata != null) {
+            paramValues = script.metadata.createDefaultValues();
+        }
+
+        // Override with stored values from NBT
+        if (wand != null && wand.hasTagCompound()) {
+            NBTTagCompound tag = wand.getTagCompound();
+            if (tag.hasKey("patternParams")) {
+                NBTTagCompound paramsTag = tag.getCompoundTag("patternParams");
+
+                // Extract each parameter
+                for (Object key : paramsTag.func_150296_c()) { // getKeySet() in 1.7.10
+                    String paramName = (String) key;
+
+                    // Check parameter type from metadata
+                    if (script.metadata != null) {
+                        com.xXseesXx.patternwand.patterns.scripted.PatternParameter param = script.metadata
+                            .getParameter(paramName);
+                        if (param != null) {
+                            switch (param.getType()) {
+                                case INTEGER:
+                                    paramValues.put(paramName, paramsTag.getInteger(paramName));
+                                    break;
+                                case FLOAT:
+                                    paramValues.put(paramName, paramsTag.getDouble(paramName));
+                                    break;
+                                case BOOLEAN:
+                                    paramValues.put(paramName, paramsTag.getBoolean(paramName));
+                                    break;
+                                case STRING:
+                                    paramValues.put(paramName, paramsTag.getString(paramName));
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return paramValues;
+    }
+
+    /**
+     * Create placement context for pattern execution.
+     */
+    private PlacementContext createPlacementContext(Point3d clickedPos, LinkedList<Point3d> blocks,
+        net.minecraft.entity.player.EntityPlayer player, int side) {
+
+        // Calculate bounding box
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+
+        for (Point3d pos : blocks) {
+            minX = Math.min(minX, pos.x);
+            minY = Math.min(minY, pos.y);
+            minZ = Math.min(minZ, pos.z);
+            maxX = Math.max(maxX, pos.x);
+            maxY = Math.max(maxY, pos.y);
+            maxZ = Math.max(maxZ, pos.z);
+        }
+
+        // Get player orientation
+        float playerYaw = player.rotationYaw;
+        float playerPitch = player.rotationPitch;
+
+        // Get world time
+        long worldTime = worldShim.getWorld()
+            .getTotalWorldTime();
+        long dayTime = worldShim.getWorld()
+            .getWorldTime();
+
+        return new PlacementContext(
+            clickedPos.x,
+            clickedPos.y,
+            clickedPos.z,
+            side,
+            minX,
+            minY,
+            minZ,
+            maxX,
+            maxY,
+            maxZ,
+            playerYaw,
+            playerPitch,
+            worldTime,
+            dayTime);
     }
 }
