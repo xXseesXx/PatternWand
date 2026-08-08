@@ -1,321 +1,163 @@
-# Pattern Wand Implementation Summary
+# PatternWand Next Features Implementation Summary
 
-## Session Goals Completed
+This document summarizes the implementation of the high-ROI features from NEXTFEATURES.md.
 
-### ✅ 1. Created Lua API Wrapper System
-Implemented proper Java-to-Lua bridge for clean API exposure.
+## Implementation Date
+August 7, 2026
+
+## Features Implemented
+
+### ✅ 1. Pattern Metadata & Parameters (⭐⭐⭐⭐⭐)
 
 **Files Created:**
-- `LuaNoiseWrapper.java` - Wraps noise generation functions
-- `LuaPaletteWrapper.java` - Wraps palette inventory functions  
-- `LuaUtilWrapper.java` - Wraps utility/math functions
-- `LUA_API_WRAPPER.md` - Complete documentation
-
-**Benefits:**
-- Clean, type-safe function calls from Lua
-- Better performance than reflection-based coercion
-- Easier to extend with new API functions
-- No changes required to existing Lua scripts
-
-### ✅ 2. Fixed Pattern Determinism
-Made patterns deterministic based on world coordinates, not click position.
-
-**Root Cause Found:**
-```java
-// OLD: Seed based on click position (non-deterministic)
-long seed = ((long) clickedPos.x << 32) | (clickedPos.z & 0xFFFFFFFFL);
-
-// NEW: Seed based on world (deterministic)
-long seed = worldShim.getWorld().getSeed();
-```
-
-**Why It Matters:**
-- Noise generators are only deterministic with constant seed
-- Old behavior: same world coords → different patterns (depending on click)
-- New behavior: same world coords → same pattern (always)
+- `PatternParameter.java` - Represents individual pattern parameters with type validation
+- `PatternMetadata.java` - Container for pattern metadata and parameter management
 
 **Files Modified:**
-- `PatternWandWorker.java` - Added `getPatternSeed()` method
-- `PatternWandCommand.java` - Added seed management commands
+- `CompiledScript.java` - Now includes PatternMetadata
+- `ScriptEngine.java` - Extracts metadata from Lua scripts and passes parameters to patterns
 
-**New Commands:**
-- `/patternwand seed <value>` - Set custom seed
-- `/patternwand clearseed` - Use world seed
-- `/patternwand info` - Show pattern and seed info
+**Features:**
+- Patterns can define metadata with name, author, and configurable parameters
+- Supports `number`, `boolean`, and `string` parameter types
+- Number parameters support min/max constraints
+- Fully backward compatible - patterns without metadata continue to work
 
-## Technical Architecture
-
-### Lua Wrapper Pattern
-
-```
-┌─────────────┐
-│  Lua Script │
-└──────┬──────┘
-       │ noise.perlin(x, z)
-       ▼
-┌─────────────┐
-│  LuaTable   │ ← Created by wrapper
-│  Functions  │
-└──────┬──────┘
-       │ checkdouble(), call Java
-       ▼
-┌─────────────┐
-│   NoiseAPI  │ ← Java implementation
-└─────────────┘
-```
-
-### Seed Resolution
-
-```
-Pattern Execution
-       │
-       ▼
-getPatternSeed(wand)
-       │
-       ├─→ Check NBT for "patternSeed"
-       │   └─→ Found? Return custom seed
-       │
-       └─→ Not found? Return world.getSeed()
-       
-       ▼
-Create NoiseAPI(seed)
-       │
-       ▼
-All noise functions use this seed
-       │
-       ▼
-World coordinates produce deterministic output
-```
-
-## Code Changes Summary
-
-### New Classes (3)
-1. `LuaNoiseWrapper` - 58 lines
-2. `LuaPaletteWrapper` - 69 lines
-3. `LuaUtilWrapper` - 124 lines
-
-**Total:** 251 lines
-
-### Modified Classes (3)
-
-#### 1. ScriptEngine.java
-**Changes:**
-- Import wrapper classes instead of `CoerceJavaToLua`
-- Use `LuaTable` instead of `LuaValue` for API objects
-- Call wrapper methods to create Lua tables
-
-**Lines Changed:** ~10
-
-#### 2. PatternWandWorker.java
-**Changes:**
-- Added `getPatternSeed(ItemStack)` method (20 lines)
-- Modified `placeBlocksWithPattern()` to use new seed method
-- Seed now deterministic by world coordinates
-
-**Lines Changed:** ~25
-
-#### 3. PatternWandCommand.java
-**Changes:**
-- Added `handleSeed()` method (35 lines)
-- Added `handleClearSeed()` method (25 lines)
-- Updated `handleInfo()` to show seed info (20 lines)
-- Updated command usage and tab completion
-
-**Lines Changed:** ~90
-
-### Documentation (4 files)
-1. `LUA_API_WRAPPER.md` - 340 lines
-2. `PATTERN_SEED_FIX.md` - 239 lines  
-3. `CHANGES_SUMMARY.md` - 313 lines
-4. `COMMAND_REFERENCE.md` - 251 lines
-
-**Total Documentation:** 1,143 lines
-
-## Testing Plan
-
-### Unit Tests Needed
-```java
-// Test wrapper creation
-@Test
-public void testNoiseWrapperCreation() {
-    NoiseAPI api = new NoiseAPI(12345);
-    LuaTable table = LuaNoiseWrapper.wrap(api);
-    assertNotNull(table.get("perlin"));
-    assertNotNull(table.get("simplex"));
-}
-
-// Test deterministic seed
-@Test
-public void testDeterministicSeed() {
-    long worldSeed = 12345;
-    // Create two workers with same world seed
-    // Execute pattern at same coords
-    // Assert same output
-}
-
-// Test custom seed override
-@Test
-public void testCustomSeed() {
-    ItemStack wand = new ItemStack(...);
-    NBTTagCompound tag = new NBTTagCompound();
-    tag.setLong("patternSeed", 99999);
-    wand.setTagCompound(tag);
-    
-    long seed = getPatternSeed(wand);
-    assertEquals(99999, seed);
-}
-```
-
-### Integration Tests
-1. **Wrapper Functionality**
-   - Load pattern script
-   - Call noise functions
-   - Call palette functions
-   - Call util functions
-   - Verify no errors
-
-2. **Deterministic Patterns**
-   - Place pattern at coords A
-   - Place pattern at coords B
-   - Verify overlap is identical
-
-3. **Custom Seeds**
-   - Set seed 1111
-   - Place pattern → Output A
-   - Set seed 2222
-   - Place pattern → Output B
-   - Assert Output A ≠ Output B
-   - Reset to seed 1111
-   - Place pattern → Output C
-   - Assert Output A = Output C
-
-4. **Command Tests**
-   - `/patternwand seed 12345`
-   - Verify NBT updated
-   - `/patternwand info`
-   - Verify shows seed
-   - `/patternwand clearseed`
-   - Verify NBT cleared
-
-## Compatibility
-
-### Backward Compatibility
-**✅ Lua Scripts:** No changes needed, fully compatible
-**⚠️ Pattern Output:** Will look different (but correct now)
-
-### Forward Compatibility
-**✅ Easy to Extend:** Wrapper pattern makes adding new APIs simple
-
-Example:
-```java
-// Add to UtilAPI.java
-public double round(double value) {
-    return Math.round(value);
-}
-
-// Add to LuaUtilWrapper.java
-table.set("round", new OneArgFunction() {
-    @Override
-    public LuaValue call(LuaValue value) {
-        return LuaValue.valueOf(api.round(value.checkdouble()));
+**Example:**
+```lua
+metadata = {
+    name = "Brick Wall",
+    author = "PatternWand",
+    parameters = {
+        {name="brickWidth", type="number", default=4, min=2, max=8},
+        {name="weathered", type="boolean", default=true}
     }
-});
+}
 
-// Use in Lua
-local rounded = util.round(3.7)  -- 4
+function pattern(x, y, z, relX, relY, relZ, palette, noise, util, seed, params, context, debug)
+    local width = params.brickWidth
+    local weathered = params.weathered
+    -- Use parameters in pattern logic
+end
 ```
 
-## Performance Considerations
+### ✅ 2. Placement Context (⭐⭐⭐⭐⭐)
 
-### Wrapper Performance
-- **Better than CoerceJavaToLua:** Direct function calls instead of reflection
-- **Minimal overhead:** Simple table lookups
-- **Cacheable:** Same wrapper instance for all pattern executions
+**Files Created:**
+- `PlacementContext.java` - Contains placement context data
+- `LuaContextWrapper.java` - Lua wrapper for context
 
-### Seed Performance
-- **Same as before:** One seed generation per pattern execution
-- **No additional overhead:** World seed lookup is fast
-- **Cached in world:** World seed doesn't change
+**Files Modified:**
+- `ScriptEngine.java` - Passes context to pattern function
 
-## Future Enhancements
+**Features:**
+- Exposes clicked block position and face
+- Provides bounding box (min/max coordinates)
+- Includes player orientation (yaw and pitch)
+- Provides world time and day time
+- Enables direction-aware and centered patterns
 
-### Potential APIs to Add
+**Context Fields:**
+- `clickedX, clickedY, clickedZ` - Click position
+- `clickFace` - Which face was clicked
+- `minX, minY, minZ, maxX, maxY, maxZ` - Bounding box
+- `playerYaw, playerPitch` - Player rotation
+- `worldTime, dayTime` - Time information
 
-#### 1. Fractal Noise
-```lua
-local fbm = noise.fbm(x, z, 4)  -- 4 octaves
-```
+### ✅ 3. Palette API Improvements (⭐⭐⭐⭐☆)
 
-#### 2. Voronoi/Cellular
-```lua
-local cell = noise.voronoi(x, z)
-```
+**Files Modified:**
+- `PaletteAPI.java` - Added new selection methods
+- `LuaPaletteWrapper.java` - Added Lua wrappers
 
-#### 3. Random API
-```lua
-local r = random.range(1, 10)
-local choice = random.pick({1, 2, 3})
-```
+**New Functions:**
+- `palette.pickUniform()` - Uniform random selection (equal probability)
+- `palette.pickWeightedExcept(indices)` - Weighted selection excluding specific indices
+- `palette.pickWeightedRange(min, max)` - Weighted selection from index range
 
-#### 4. Vector Math
-```lua
-local v = vector.new(x, y, z)
-local len = vector.length(v)
-local norm = vector.normalize(v)
-```
+**Benefits:**
+- More flexible block selection
+- Better control over palette usage
+- Enables complex pattern variations
 
-#### 5. Color API
-```lua
-local rgb = color.hsl(hue, sat, light)
-local mixed = color.mix(color1, color2, 0.5)
-```
+### ✅ 4. Geometry & Math Utilities (⭐⭐⭐⭐☆)
 
-All easily added through the wrapper system!
+**Files Modified:**
+- `UtilAPI.java` - Added geometry and math functions
+- `LuaUtilWrapper.java` - Added Lua wrappers
 
-## Known Issues / Limitations
+**New Functions:**
+- `util.distance3d(x1, y1, z1, x2, y2, z2)` - 3D distance calculation
+- `util.inSphere(x, y, z, centerX, centerY, centerZ, radius)` - Sphere containment test
+- `util.inBox(x, y, z, minX, minY, minZ, maxX, maxY, maxZ)` - Box containment test
+- `util.rotate2D(x, y, angle)` - 2D rotation
+- `util.mod(a, b)` - Proper modulo (always positive)
+- `util.sign(value)` - Sign function
+- `util.smoothstep(edge0, edge1, x)` - Smooth interpolation
 
-### None Identified
-The implementation is complete and functional.
+**Benefits:**
+- Simplified geometric pattern creation
+- Better math operations
+- Enables spheres, domes, and complex shapes
 
-### Potential Edge Cases
-1. **Seed overflow:** Long.MAX_VALUE handled correctly by Java
-2. **Empty palette:** Already handled by existing code
-3. **Script errors:** Caught and logged by ScriptEngine
-4. **Concurrent execution:** Executor service handles thread safety
+### ✅ 5. Debug & Development Tools (⭐⭐⭐⭐☆)
 
-## Success Metrics
+**Files Created:**
+- `DebugAPI.java` - Debug functionality
+- `LuaDebugWrapper.java` - Lua wrapper for debug
 
-✅ **Goal 1: Clean API Exposure**
-- Wrapper classes created
-- Type-safe function calls
-- No reflection overhead
+**Files Modified:**
+- `PatternWandCommand.java` - Added `/patternwand debug <on|off>` command
+- `ScriptEngine.java` - Passes debug API to patterns
 
-✅ **Goal 2: Deterministic Patterns**  
-- World coordinate based
-- Reproducible output
-- Custom seed support
+**Features:**
+- `debug.print(...)` function for pattern scripts
+- `/patternwand debug on` - Enable debug output
+- `/patternwand debug off` - Disable debug output
+- Debug messages printed to console
+- No performance impact when disabled
 
-✅ **Additional Achievements**
-- Comprehensive documentation
-- Command system extended
-- Easy extensibility
-- Zero breaking changes to Lua scripts
+## Example Patterns Created
 
-## Conclusion
+1. **configurable_bricks.lua** - Demonstrates metadata and parameters
+2. **centered_gradient.lua** - Demonstrates placement context
+3. **spherical_dome.lua** - Demonstrates geometry utilities
+4. **random_mix.lua** - Demonstrates new palette methods
+5. **debug_example.lua** - Demonstrates debug functionality
 
-Both goals have been successfully completed:
+## Backward Compatibility
 
-1. **Lua API wrappers** provide a clean, efficient bridge between Java and Lua
-2. **Deterministic seeds** ensure patterns are consistent based on world coordinates
+All changes are fully backward compatible:
+- Old patterns continue to work without modification
+- Pattern function accepts additional optional parameters
+- Metadata is optional
+- New API functions don't interfere with existing patterns
 
-The system is now:
-- ✅ More maintainable
-- ✅ More predictable
-- ✅ More extensible
-- ✅ Better documented
-- ✅ Backward compatible (for scripts)
+## Documentation Updates
 
-**Total implementation time:** ~2 hours
-**Total lines of code:** ~400
-**Total documentation:** ~1,200 lines
-**Breaking changes:** 0 (for Lua scripts)
+- Updated README.md with comprehensive API documentation
+- Added documentation for all new features
+- Included examples for each new API
+- Updated command reference
+
+## Testing
+
+- All code compiles successfully with Gradle
+- Example patterns created for each feature
+- Backward compatibility verified through existing pattern preservation
+- Build passes with clean build
+
+## Design Goals Achieved
+
+✅ Fully backward compatible
+✅ Keep patterns deterministic
+✅ Minimize API complexity
+✅ Expose existing engine data where possible
+✅ Prioritize usability over niche power features
+
+## Build Status
+
+✅ Build successful
+✅ All spotless checks pass
+✅ No compilation errors
+✅ Ready for testing in-game
