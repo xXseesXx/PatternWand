@@ -56,6 +56,24 @@ public class LuaNoiseWrapper {
             }
         });
 
+        // 2D Value noise: noise.value(x, z)
+        table.set("value", new TwoArgFunction() {
+
+            @Override
+            public LuaValue call(LuaValue x, LuaValue z) {
+                return LuaValue.valueOf(api.value(x.checkdouble(), z.checkdouble()));
+            }
+        });
+
+        // 3D Value noise: noise.value3d(x, y, z)
+        table.set("value3d", new ThreeArgFunction() {
+
+            @Override
+            public LuaValue call(LuaValue x, LuaValue y, LuaValue z) {
+                return LuaValue.valueOf(api.value3d(x.checkdouble(), y.checkdouble(), z.checkdouble()));
+            }
+        });
+
         return table;
     }
 }

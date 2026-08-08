@@ -71,17 +71,15 @@ public class PatternWandBlockEvents {
 
         Point3d clickedPos = new Point3d(event.target.blockX, event.target.blockY, event.target.blockZ);
 
-        // Get the palette and create matcher
+        // Get the palette
         PatternPalette palette = wandItem.getPalette(event.currentItem);
-        BlockMatcher matcher = new BlockMatcher(palette);
 
-        // Create Pattern Wand Worker with palette-based matching
+        // Create Pattern Wand Worker which will check pattern metadata for ignoreMetadata setting
         PatternWandWorker worker = new PatternWandWorker(
             wand,
             playerShim,
             worldShim,
             palette,
-            matcher,
             event.currentItem,
             clickedPos);
 

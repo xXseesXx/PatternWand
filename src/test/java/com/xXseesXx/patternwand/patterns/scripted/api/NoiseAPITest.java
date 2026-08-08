@@ -175,4 +175,102 @@ public class NoiseAPITest {
         value = noise.simplex(10000.0, 20000.0);
         assertTrue(value >= -1.0 && value <= 1.0);
     }
+
+    // -------------------------------------------------------------------------
+    // Value noise tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void testValue2DRange() {
+        // Test that value noise returns values in [-1, 1]
+        for (int i = 0; i < 100; i++) {
+            double v = noise.value(i * 0.5, i * 0.3);
+            assertTrue("Value noise 2D out of range: " + v, v >= -1.0 && v <= 1.0);
+        }
+    }
+
+    @Test
+    public void testValue3DRange() {
+        // Test that 3D value noise returns values in [-1, 1]
+        for (int i = 0; i < 100; i++) {
+            double v = noise.value3d(i * 0.5, i * 0.3, i * 0.7);
+            assertTrue("Value noise 3D out of range: " + v, v >= -1.0 && v <= 1.0);
+        }
+    }
+
+    @Test
+    public void testValue2DDeterministic() {
+        // Same input should give same output
+        double v1 = noise.value(10.5, 20.3);
+        double v2 = noise.value(10.5, 20.3);
+        assertEquals(v1, v2, EPSILON);
+    }
+
+    @Test
+    public void testValue3DDeterministic() {
+        // Same input should give same output
+        double v1 = noise.value3d(10.5, 15.2, 20.3);
+        double v2 = noise.value3d(10.5, 15.2, 20.3);
+        assertEquals(v1, v2, EPSILON);
+    }
+
+    @Test
+    public void testValue2DVariesWithInput() {
+        // Different inputs should give different outputs
+        double v1 = noise.value(0.5, 0.5);
+        double v2 = noise.value(100.5, 100.5);
+        assertNotEquals(v1, v2, EPSILON);
+    }
+
+    @Test
+    public void testValue3DVariesWithInput() {
+        // Different inputs should give different outputs
+        double v1 = noise.value3d(0.5, 0.5, 0.5);
+        double v2 = noise.value3d(100.5, 100.5, 100.5);
+        assertNotEquals(v1, v2, EPSILON);
+    }
+
+    @Test
+    public void testValue2DContinuity() {
+        // Value noise should be continuous: nearby points have similar values
+        double v1 = noise.value(10.0, 10.0);
+        double v2 = noise.value(10.01, 10.01);
+        assertTrue("Value noise 2D not continuous: " + Math.abs(v1 - v2), Math.abs(v1 - v2) < 0.1);
+    }
+
+    @Test
+    public void testValue3DContinuity() {
+        // 3D value noise should also be continuous
+        double v1 = noise.value3d(10.0, 10.0, 10.0);
+        double v2 = noise.value3d(10.01, 10.01, 10.01);
+        assertTrue("Value noise 3D not continuous: " + Math.abs(v1 - v2), Math.abs(v1 - v2) < 0.1);
+    }
+
+    @Test
+    public void testValueDifferentSeedsDifferentResults() {
+        NoiseAPI noise2 = new NoiseAPI(54321L);
+        double v1 = noise.value(10.5, 10.5);
+        double v2 = noise2.value(10.5, 10.5);
+        assertNotEquals(v1, v2, EPSILON);
+    }
+
+    @Test
+    public void testValueWithNegativeCoordinates() {
+        // Negative coordinates should still return in-range values
+        double v = noise.value(-10.5, -20.3);
+        assertTrue(v >= -1.0 && v <= 1.0);
+
+        v = noise.value3d(-10.5, -5.0, -20.3);
+        assertTrue(v >= -1.0 && v <= 1.0);
+    }
+
+    @Test
+    public void testValueWithLargeCoordinates() {
+        // Large coordinates should still return in-range values
+        double v = noise.value(10000.0, 20000.0);
+        assertTrue(v >= -1.0 && v <= 1.0);
+
+        v = noise.value3d(10000.0, 5000.0, 20000.0);
+        assertTrue(v >= -1.0 && v <= 1.0);
+    }
 }

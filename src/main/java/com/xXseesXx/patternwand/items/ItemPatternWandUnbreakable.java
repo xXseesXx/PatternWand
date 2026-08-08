@@ -94,22 +94,18 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
             // Get the palette for matching
             PatternPalette palette = getPalette(itemstack);
 
-            // Create block matcher using palette
-            BlockMatcher matcher = new BlockMatcher(palette);
-
-            // Get blocks that match the palette at clicked position
-            ItemStack sourceItems = getProperItemStack(worldShim, playerShim, clickedPos, matcher);
+            // Get blocks that match the palette at clicked position (using metadata-ignoring matcher)
+            ItemStack sourceItems = getProperItemStack(worldShim, playerShim, clickedPos, palette);
 
             if (sourceItems != null && sourceItems.getItem() instanceof ItemBlock) {
                 int numBlocks = Math.min(wand.getMaxBlocks(itemstack), playerShim.countItems(sourceItems, false));
 
-                // Use modified WandWorker that accepts block matcher
+                // Use modified WandWorker that ignores block metadata/rotation
                 PatternWandWorker worker = new PatternWandWorker(
                     this.wand,
                     playerShim,
                     worldShim,
                     palette,
-                    matcher,
                     itemstack, // Pass wand item for pattern access
                     clickedPos // Pass origin for relative coordinates
                 );
@@ -151,14 +147,17 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
     }
 
     /**
-     * Get the proper item stack for placement using palette matching.
+     * Get the proper item stack for placement using palette matching (ignores metadata/rotation).
      */
     private ItemStack getProperItemStack(IWorldShim worldShim, IPlayerShim playerShim, Point3d clickedPos,
-        BlockMatcher matcher) {
+        PatternPalette palette) {
         Block worldBlock = worldShim.getBlock(clickedPos);
         int worldMeta = worldShim.getMetadata(clickedPos);
 
-        // Check if clicked block is in palette
+        // Create a metadata-ignoring matcher for checking if block is in palette
+        BlockMatcher matcher = new BlockMatcher(palette, true); // true = ignore metadata/rotation
+
+        // Check if clicked block is in palette (ignoring rotation/metadata)
         if (matcher.matches(worldBlock, worldMeta)) {
             return new ItemStack(worldBlock, 1, worldMeta);
         }
