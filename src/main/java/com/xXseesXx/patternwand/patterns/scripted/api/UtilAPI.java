@@ -272,50 +272,50 @@ public class UtilAPI {
      */
     public double[] rotateFace(double relX, double relY, double relZ, int face) {
         double u, v, w;
-        
+
         switch (face) {
             case 0: // DOWN (bottom face)
                 // Looking down at XZ plane
                 u = relX;
-                v = -relZ;  // Flip Z so forward is positive
-                w = -relY;  // Away from surface is up
+                v = -relZ; // Flip Z so forward is positive
+                w = -relY; // Away from surface is up
                 break;
-                
+
             case 1: // UP (top face)
                 // Looking up at XZ plane
                 u = relX;
                 v = relZ;
-                w = relY;   // Away from surface is up
+                w = relY; // Away from surface is up
                 break;
-                
+
             case 2: // NORTH (negative Z)
                 // Looking north along XY plane
-                u = -relX;  // Flip X for consistent right-hand feel
+                u = -relX; // Flip X for consistent right-hand feel
                 v = relY;
-                w = -relZ;  // Away from surface is toward negative Z
+                w = -relZ; // Away from surface is toward negative Z
                 break;
-                
+
             case 3: // SOUTH (positive Z)
                 // Looking south along XY plane
                 u = relX;
                 v = relY;
-                w = relZ;   // Away from surface is toward positive Z
+                w = relZ; // Away from surface is toward positive Z
                 break;
-                
+
             case 4: // WEST (negative X)
                 // Looking west along ZY plane
                 u = relZ;
                 v = relY;
-                w = -relX;  // Away from surface is toward negative X
+                w = -relX; // Away from surface is toward negative X
                 break;
-                
+
             case 5: // EAST (positive X)
                 // Looking east along ZY plane
-                u = -relZ;  // Flip Z for consistent right-hand feel
+                u = -relZ; // Flip Z for consistent right-hand feel
                 v = relY;
-                w = relX;   // Away from surface is toward positive X
+                w = relX; // Away from surface is toward positive X
                 break;
-                
+
             default:
                 // Invalid face, return unchanged
                 u = relX;
@@ -323,7 +323,7 @@ public class UtilAPI {
                 w = relZ;
                 break;
         }
-        
+
         return new double[] { u, v, w };
     }
 }

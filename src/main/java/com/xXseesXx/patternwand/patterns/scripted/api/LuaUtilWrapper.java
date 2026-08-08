@@ -263,14 +263,18 @@ public class LuaUtilWrapper {
             @Override
             public LuaValue invoke(org.luaj.vm2.Varargs args) {
                 double[] result = api.rotateFace(
-                    args.arg(1).checkdouble(),
-                    args.arg(2).checkdouble(),
-                    args.arg(3).checkdouble(),
-                    args.arg(4).checkint());
+                    args.arg(1)
+                        .checkdouble(),
+                    args.arg(2)
+                        .checkdouble(),
+                    args.arg(3)
+                        .checkdouble(),
+                    args.arg(4)
+                        .checkint());
                 LuaTable resultTable = new LuaTable();
-                resultTable.set(1, LuaValue.valueOf(result[0]));  // u
-                resultTable.set(2, LuaValue.valueOf(result[1]));  // v
-                resultTable.set(3, LuaValue.valueOf(result[2]));  // w
+                resultTable.set(1, LuaValue.valueOf(result[0])); // u
+                resultTable.set(2, LuaValue.valueOf(result[1])); // v
+                resultTable.set(3, LuaValue.valueOf(result[2])); // w
                 return resultTable;
             }
         });
