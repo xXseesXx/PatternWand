@@ -47,6 +47,38 @@ public class CommonProxy {
         if (scriptLoader != null) {
             scriptLoader.loadAllPatterns();
         }
+
+        // Register crafting recipe for Pattern Wand
+        registerPatternWandRecipe();
+    }
+
+    private void registerPatternWandRecipe() {
+        // Get the unbreakable wand from BetterBuildersWands
+        net.minecraft.item.Item bbwUnbreakableWand = GameRegistry.findItem("betterbuilderswands", "wandUnbreakable");
+
+        if (bbwUnbreakableWand == null) {
+            PatternWandMod.LOG.error("Could not find BetterBuildersWands unbreakable wand for recipe!");
+            return;
+        }
+
+        // Pattern:
+        // L R L
+        // R W R
+        // L R L
+        // Where: W = Unbreakable Builder's Wand, R = Redstone Block, L = Lapis Block
+        GameRegistry.addRecipe(
+            new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable),
+            "LRL",
+            "RWR",
+            "LRL",
+            'W',
+            bbwUnbreakableWand,
+            'R',
+            net.minecraft.init.Blocks.redstone_block,
+            'L',
+            net.minecraft.init.Blocks.lapis_block);
+
+        PatternWandMod.LOG.info("Registered Pattern Wand crafting recipe");
     }
 
     public void postInit(FMLPostInitializationEvent event) {}
