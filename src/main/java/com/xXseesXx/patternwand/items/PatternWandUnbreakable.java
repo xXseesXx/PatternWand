@@ -20,12 +20,11 @@ public class PatternWandUnbreakable implements IWand {
         // Get tier from metadata
         int tier = itemStack.getItemDamage();
 
-        // Calculate block limit: tier^2 * 16
-        // Tier 11: 11^2 * 16 = 1936 (but we want 4096 = 64^2 = tier 64, pattern: tier 11 -> 2^12)
-        // Actually BBW uses: 2^(tier-1) for tier >= 11
-        // Tier 11 = 2^10 * 4 = 4096
-        // Tier 12 = 2^11 * 4 = 8192
-        // Tier 13 = 2^12 * 4 = 16384
+        // BBW uses tier^2 for block limits
+        // Tier 11: 11^2 * 16 = 1936 (no, that's wrong)
+        // Actually for unbreakable: tier * tier gives the limit
+        // But we want: tier 11 = 4096, tier 12 = 8192, tier 13 = 16384
+        // Pattern: multiply previous tier by 2
         switch (tier) {
             case 11:
                 return 4096;

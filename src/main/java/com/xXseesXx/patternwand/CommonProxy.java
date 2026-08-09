@@ -61,55 +61,33 @@ public class CommonProxy {
             return;
         }
 
-        // Tier 11 (4096): 1 redstone, 1 lapis
-        // Pattern:
-        // - R -
-        // R W R
-        // - L -
-        GameRegistry.addRecipe(
+        // Tier 11 (4096): 1 redstone block, 1 lapis block (shapeless)
+        GameRegistry.addShapelessRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 11),
-            " R ",
-            "RWR",
-            " L ",
-            'W',
             new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 11),
-            'R',
             net.minecraft.init.Blocks.redstone_block,
-            'L',
             net.minecraft.init.Blocks.lapis_block);
 
-        // Tier 12 (8192): 2 redstone, 2 lapis
-        // Pattern:
-        // L R L
-        // R W R
-        // - - -
-        GameRegistry.addRecipe(
+        // Tier 12 (8192): 2 redstone blocks, 2 lapis blocks (shapeless)
+        GameRegistry.addShapelessRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 12),
-            "LRL",
-            "RWR",
-            "   ",
-            'W',
             new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 12),
-            'R',
             net.minecraft.init.Blocks.redstone_block,
-            'L',
+            net.minecraft.init.Blocks.redstone_block,
+            net.minecraft.init.Blocks.lapis_block,
             net.minecraft.init.Blocks.lapis_block);
 
-        // Tier 13 (16384): 4 redstone, 4 lapis
-        // Pattern:
-        // L R L
-        // R W R
-        // L R L
-        GameRegistry.addRecipe(
+        // Tier 13 (16384): 4 redstone blocks, 4 lapis blocks (shapeless)
+        GameRegistry.addShapelessRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 13),
-            "LRL",
-            "RWR",
-            "LRL",
-            'W',
             new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 13),
-            'R',
             net.minecraft.init.Blocks.redstone_block,
-            'L',
+            net.minecraft.init.Blocks.redstone_block,
+            net.minecraft.init.Blocks.redstone_block,
+            net.minecraft.init.Blocks.redstone_block,
+            net.minecraft.init.Blocks.lapis_block,
+            net.minecraft.init.Blocks.lapis_block,
+            net.minecraft.init.Blocks.lapis_block,
             net.minecraft.init.Blocks.lapis_block);
 
         PatternWandMod.LOG.info("Registered Pattern Wand crafting recipes for all tiers");
