@@ -1,2 +1,4 @@
-item.patternwand:patternWandUnbreakable.name=Unbreakable Pattern Wand
+item.patternwand:patternWandUnbreakable.11.name=Pattern Wand (4096)
+item.patternwand:patternWandUnbreakable.12.name=Pattern Wand (8192)
+item.patternwand:patternWandUnbreakable.13.name=Pattern Wand (16384)
 patternwand.palette=Palette

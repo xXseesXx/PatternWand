@@ -31,8 +31,17 @@ import portablejim.bbw.shims.IWorldShim;
 
 /**
  * The Unbreakable Pattern Wand item - extends BetterBuildersWands with palette-based block matching.
+ * Uses metadata to represent different tiers matching BBW's unbreakable wand tiers.
  */
 public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatternWandItem {
+
+    // Tier definitions matching BBW unbreakable wand metadata
+    // Tier 11 = 4096 blocks (metadata 11)
+    // Tier 12 = 8192 blocks (metadata 12)
+    // Tier 13 = 16384 blocks (metadata 13)
+    private static final int TIER_4K = 11;
+    private static final int TIER_8K = 12;
+    private static final int TIER_16K = 13;
 
     public ItemPatternWandUnbreakable() {
         super();
@@ -41,7 +50,14 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
         this.setCreativeTab(CreativeTabs.tabTools);
         this.setMaxStackSize(1);
         this.setMaxDamage(0); // 0 means unbreakable
+        this.setHasSubtypes(true); // Enable metadata/subtypes
         this.wand = new PatternWandUnbreakable();
+    }
+
+    @Override
+    public String getUnlocalizedName(ItemStack stack) {
+        int tier = stack.getItemDamage();
+        return super.getUnlocalizedName() + "." + tier;
     }
 
     @Override
@@ -305,6 +321,9 @@ public class ItemPatternWandUnbreakable extends ItemBasicWand implements IPatter
 
     @Override
     public void getSubItems(Item item, CreativeTabs creativeTabs, java.util.List list) {
-        list.add(new ItemStack(item, 1, 0));
+        // Add all three tiers to creative inventory
+        list.add(new ItemStack(item, 1, TIER_4K));
+        list.add(new ItemStack(item, 1, TIER_8K));
+        list.add(new ItemStack(item, 1, TIER_16K));
     }
 }

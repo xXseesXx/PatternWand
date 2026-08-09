@@ -61,29 +61,45 @@ public class CommonProxy {
             return;
         }
 
-        // The unbreakable wand uses metadata for different tiers
-        // Use WILDCARD_VALUE to accept any tier
-        net.minecraft.item.ItemStack unbreakableWandAny = new net.minecraft.item.ItemStack(
-            bbwUnbreakableWand,
-            1,
-            net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE);
-
-        // Pattern:
-        // L R L
-        // R W R
-        // L R L
-        // Where: W = Any tier Unbreakable Builder's Wand, R = Redstone Block, L = Lapis Block
+        // Register shapeless recipe that preserves the tier
+        // Pattern Wand tier = BBW Unbreakable Wand tier
         GameRegistry.addRecipe(
-            new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable),
-            "LRL",
-            "RWR",
-            "LRL",
-            'W',
-            unbreakableWandAny,
-            'R',
-            net.minecraft.init.Blocks.redstone_block,
-            'L',
-            net.minecraft.init.Blocks.lapis_block);
+            new net.minecraftforge.oredict.ShapedOreRecipe(
+                new net.minecraft.item.ItemStack(
+                    ModItems.patternWandUnbreakable,
+                    1,
+                    net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE),
+                "LRL",
+                "RWR",
+                "LRL",
+                'W',
+                new net.minecraft.item.ItemStack(
+                    bbwUnbreakableWand,
+                    1,
+                    net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE),
+                'R',
+                net.minecraft.init.Blocks.redstone_block,
+                'L',
+                net.minecraft.init.Blocks.lapis_block) {
+
+                @Override
+                public net.minecraft.item.ItemStack getCraftingResult(
+                    net.minecraft.inventory.InventoryCrafting craftMatrix) {
+                    // Find the BBW wand in the crafting grid and use its metadata
+                    for (int i = 0; i < craftMatrix.getSizeInventory(); i++) {
+                        net.minecraft.item.ItemStack stack = craftMatrix.getStackInSlot(i);
+                        if (stack != null && stack.getItem() == bbwUnbreakableWand) {
+                            // Create pattern wand with same tier (metadata) as input wand
+                            return new net.minecraft.item.ItemStack(
+                                ModItems.patternWandUnbreakable,
+                                1,
+                                stack.getItemDamage());
+                        }
+                    }
+                    // Fallback to tier 13 if something goes wrong
+                    return new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 13);
+                }
+            });
 
         PatternWandMod.LOG.info("Registered Pattern Wand crafting recipe");
     }
