@@ -64,14 +64,14 @@ public class CommonProxy {
         // Tier 11 (4096): 1 redstone block, 1 lapis block (shapeless)
         GameRegistry.addShapelessRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 11),
-            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 11),
+            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 12),
             net.minecraft.init.Blocks.redstone_block,
             net.minecraft.init.Blocks.lapis_block);
 
         // Tier 12 (8192): 2 redstone blocks, 2 lapis blocks (shapeless)
         GameRegistry.addShapelessRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 12),
-            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 12),
+            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 13),
             net.minecraft.init.Blocks.redstone_block,
             net.minecraft.init.Blocks.redstone_block,
             net.minecraft.init.Blocks.lapis_block,
@@ -80,7 +80,7 @@ public class CommonProxy {
         // Tier 13 (16384): 4 redstone blocks, 4 lapis blocks (shapeless)
         GameRegistry.addShapelessRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 13),
-            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 13),
+            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 14),
             net.minecraft.init.Blocks.redstone_block,
             net.minecraft.init.Blocks.redstone_block,
             net.minecraft.init.Blocks.redstone_block,
