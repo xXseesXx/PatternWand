@@ -23,20 +23,20 @@ public class PaletteAPITest {
     @Before
     public void setUp() {
         // Create mock palette with some blocks
-        mockPalette = new InventoryBasic("Test Palette", false, 27);
+        mockPalette = new InventoryBasic("Test Palette", false, 54);
         palette = new PaletteAPI(mockPalette, TEST_SEED);
     }
 
     @Test
     public void testSize() {
-        // Palette should always have 27 slots
-        assertEquals(27, palette.size());
+        // Palette should always have 54 slots
+        assertEquals(54, palette.size());
     }
 
     @Test
     public void testEmptyPalette() {
         // All slots should be empty initially
-        for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 54; i++) {
             assertTrue(palette.isEmpty(i));
         }
 
@@ -63,7 +63,7 @@ public class PaletteAPITest {
     public void testGetWeightInvalidIndex() {
         // Invalid indices should return 0
         assertEquals(0, palette.getWeight(-1));
-        assertEquals(0, palette.getWeight(27));
+        assertEquals(0, palette.getWeight(54));
         assertEquals(0, palette.getWeight(100));
     }
 
@@ -211,12 +211,12 @@ public class PaletteAPITest {
     @Test
     public void testCountNonEmptyFullPalette() {
         // Fill entire palette
-        for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 54; i++) {
             mockPalette.setInventorySlotContents(i, new ItemStack(Blocks.stone, 1));
         }
 
         palette = new PaletteAPI(mockPalette, TEST_SEED);
-        assertEquals(27, palette.countNonEmpty());
+        assertEquals(54, palette.countNonEmpty());
     }
 
     @Test

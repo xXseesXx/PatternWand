@@ -24,7 +24,7 @@ public class ScriptEngineTest {
         engine = new ScriptEngine();
 
         // Create mock palette with some blocks
-        mockPalette = new InventoryBasic("Test Palette", false, 27);
+        mockPalette = new InventoryBasic("Test Palette", false, 54);
         mockPalette.setInventorySlotContents(0, new ItemStack(Blocks.stone, 64));
         mockPalette.setInventorySlotContents(1, new ItemStack(Blocks.cobblestone, 32));
         mockPalette.setInventorySlotContents(2, new ItemStack(Blocks.dirt, 16));

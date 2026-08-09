@@ -17,7 +17,7 @@ public class PaletteAPI {
     /**
      * Create a new Palette API.
      *
-     * @param paletteInventory The palette inventory (27 slots)
+     * @param paletteInventory The palette inventory (54 slots)
      * @param seed             Random seed for weighted selection
      */
     public PaletteAPI(IInventory paletteInventory, long seed) {
@@ -28,7 +28,7 @@ public class PaletteAPI {
     /**
      * Get the number of palette slots.
      *
-     * @return Number of slots (always 27)
+     * @return Number of slots (always 54)
      */
     public int size() {
         return paletteInventory.getSizeInventory();
@@ -38,7 +38,7 @@ public class PaletteAPI {
      * Get the weight (stack size) of a palette slot.
      * Higher stack sizes mean higher probability in weighted random selection.
      *
-     * @param index Palette slot index (0-26)
+     * @param index Palette slot index (0-53)
      * @return Stack size (1-64), or 0 if slot is empty
      */
     public int getWeight(double index) {
@@ -58,7 +58,7 @@ public class PaletteAPI {
     /**
      * Check if a palette slot is empty.
      *
-     * @param index Palette slot index (0-26)
+     * @param index Palette slot index (0-53)
      * @return true if slot is empty
      */
     public boolean isEmpty(double index) {

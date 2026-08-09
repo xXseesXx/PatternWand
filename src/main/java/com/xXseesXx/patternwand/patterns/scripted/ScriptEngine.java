@@ -323,10 +323,10 @@ public class ScriptEngine {
                 } else if (result.isnumber()) {
                     int index = result.toint();
                     // Validate palette index
-                    if (index < 0 || index >= 27) {
+                    if (index < 0 || index >= 54) {
                         throw new ScriptExecutionException(
                             script.name,
-                            "Pattern returned invalid palette index: " + index + " (must be 0-26)");
+                            "Pattern returned invalid palette index: " + index + " (must be 0-53)");
                     }
                     return index;
                 } else {

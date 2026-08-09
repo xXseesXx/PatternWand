@@ -29,30 +29,30 @@ public class ContainerPatternWand extends Container {
         this.wandItem = (IPatternWandItem) wandStack.getItem();
         this.player = playerInventory.player;
 
-        // Create inventory for 27 palette slots (3x9 grid)
-        this.paletteInventory = new InventoryBasic("Pattern Palette", false, 27);
+        // Create inventory for 54 palette slots (6x9 grid)
+        this.paletteInventory = new InventoryBasic("Pattern Palette", false, 54);
 
         // Load palette from wand NBT (if any)
         loadPaletteFromWand();
 
-        // Add palette slots (3 rows x 9 columns)
-        for (int row = 0; row < 3; row++) {
+        // Add palette slots (6 rows x 9 columns at the top)
+        for (int row = 0; row < 6; row++) {
             for (int col = 0; col < 9; col++) {
                 int slotIndex = row * 9 + col;
                 addSlotToContainer(new PaletteSlot(paletteInventory, slotIndex, 8 + col * 18, 18 + row * 18));
             }
         }
 
-        // Add player inventory (standard layout, moved down)
+        // Add player inventory (3 rows, positioned below 6-row palette)
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
-                addSlotToContainer(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 86 + i * 18));
+                addSlotToContainer(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 140 + i * 18));
             }
         }
 
         // Add player hotbar
         for (int i = 0; i < 9; ++i) {
-            addSlotToContainer(new Slot(playerInventory, i, 8 + i * 18, 144));
+            addSlotToContainer(new Slot(playerInventory, i, 8 + i * 18, 198));
         }
     }
 
@@ -167,7 +167,7 @@ public class ContainerPatternWand extends Container {
 
             // Build palette list
             net.minecraft.nbt.NBTTagList paletteList = new net.minecraft.nbt.NBTTagList();
-            for (int i = 0; i < 27; i++) {
+            for (int i = 0; i < 54; i++) {
                 ItemStack stack = paletteInventory.getStackInSlot(i);
                 NBTTagCompound slotTag = new NBTTagCompound();
 
@@ -204,7 +204,7 @@ public class ContainerPatternWand extends Container {
                 NBTTagCompound bbwNBT = itemNBT.getCompoundTag("bbw");
                 if (bbwNBT.hasKey("palette", Constants.NBT.TAG_LIST)) {
                     net.minecraft.nbt.NBTTagList paletteList = bbwNBT.getTagList("palette", Constants.NBT.TAG_COMPOUND);
-                    for (int i = 0; i < paletteList.tagCount() && i < 27; i++) {
+                    for (int i = 0; i < paletteList.tagCount() && i < 54; i++) {
                         NBTTagCompound slotTag = paletteList.getCompoundTagAt(i);
                         if (slotTag.hasKey("id")) {
                             String blockName = slotTag.getString("id");
@@ -234,9 +234,9 @@ public class ContainerPatternWand extends Container {
         NBTTagCompound bbwNBT = itemNBT.hasKey("bbw", Constants.NBT.TAG_COMPOUND) ? itemNBT.getCompoundTag("bbw")
             : new NBTTagCompound();
 
-        // Save all 27 slots (block ID, metadata, and stacksize)
+        // Save all 54 slots (block ID, metadata, and stacksize)
         net.minecraft.nbt.NBTTagList paletteList = new net.minecraft.nbt.NBTTagList();
-        for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 54; i++) {
             ItemStack stack = paletteInventory.getStackInSlot(i);
             NBTTagCompound slotTag = new NBTTagCompound();
 

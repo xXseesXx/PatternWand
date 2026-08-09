@@ -465,10 +465,10 @@ public class PatternWandWorker extends WandWorker {
      * Convert PatternPalette to IInventory for script API.
      */
     private IInventory paletteToInventory(PatternPalette palette) {
-        IInventory inventory = new InventoryBasic("Pattern Palette", false, 27);
+        IInventory inventory = new InventoryBasic("Pattern Palette", false, 54);
 
         List<PaletteEntry> entries = palette.getEntries();
-        for (int i = 0; i < Math.min(27, entries.size()); i++) {
+        for (int i = 0; i < Math.min(54, entries.size()); i++) {
             PaletteEntry entry = entries.get(i);
             if (entry != null && entry.block != null) {
                 // Use stack size 64 for normal blocks (could be customized)

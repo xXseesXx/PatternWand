@@ -75,7 +75,7 @@ public class PatternPalette {
     }
 
     /**
-     * Create palette from inventory (27 slots).
+     * Create palette from inventory (54 slots).
      */
     public static PatternPalette fromInventory(net.minecraft.inventory.IInventory inventory) {
         List<PaletteEntry> entries = new ArrayList<>();
