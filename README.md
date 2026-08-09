@@ -60,7 +60,7 @@ All commands are available under both `/patternwand` and the shorter alias `/pw`
 
 ### Lua Scripting API
 
-Pattern scripts define a `pattern` function that returns a palette index (0-26) or `nil` to skip placing a block.
+Pattern scripts define a `pattern` function that returns a palette index (0-53) or `nil` to skip placing a block.
 
 #### Pattern Metadata (Optional)
 
@@ -106,7 +106,7 @@ parameterName = {type = "...", default = ..., min = ..., max = ...}
 ```lua
 function pattern(x, y, z, relX, relY, relZ, palette, noise, util, seed, params, context, debug)
     -- Your pattern logic here
-    return paletteIndex  -- 0-26, or nil to skip
+    return paletteIndex  -- 0-53, or nil to skip
 end
 ```
 
@@ -125,7 +125,7 @@ end
 #### Palette API
 
 **Basic Functions:**
-- `palette.size()` - Returns 27 (number of palette slots)
+- `palette.size()` - Returns 54 (number of palette slots)
 - `palette.getWeight(index)` - Get stack size of slot (1-64, or 0 if empty)
 - `palette.isEmpty(index)` - Check if slot is empty
 - `palette.countNonEmpty()` - Count non-empty slots
