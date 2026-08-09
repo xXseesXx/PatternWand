@@ -61,47 +61,58 @@ public class CommonProxy {
             return;
         }
 
-        // Register shapeless recipe that preserves the tier
-        // Pattern Wand tier = BBW Unbreakable Wand tier
+        // Tier 11 (4096): 1 redstone, 1 lapis
+        // Pattern:
+        // - R -
+        // R W R
+        // - L -
         GameRegistry.addRecipe(
-            new net.minecraftforge.oredict.ShapedOreRecipe(
-                new net.minecraft.item.ItemStack(
-                    ModItems.patternWandUnbreakable,
-                    1,
-                    net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE),
-                "LRL",
-                "RWR",
-                "LRL",
-                'W',
-                new net.minecraft.item.ItemStack(
-                    bbwUnbreakableWand,
-                    1,
-                    net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE),
-                'R',
-                net.minecraft.init.Blocks.redstone_block,
-                'L',
-                net.minecraft.init.Blocks.lapis_block) {
+            new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 11),
+            " R ",
+            "RWR",
+            " L ",
+            'W',
+            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 11),
+            'R',
+            net.minecraft.init.Blocks.redstone_block,
+            'L',
+            net.minecraft.init.Blocks.lapis_block);
 
-                @Override
-                public net.minecraft.item.ItemStack getCraftingResult(
-                    net.minecraft.inventory.InventoryCrafting craftMatrix) {
-                    // Find the BBW wand in the crafting grid and use its metadata
-                    for (int i = 0; i < craftMatrix.getSizeInventory(); i++) {
-                        net.minecraft.item.ItemStack stack = craftMatrix.getStackInSlot(i);
-                        if (stack != null && stack.getItem() == bbwUnbreakableWand) {
-                            // Create pattern wand with same tier (metadata) as input wand
-                            return new net.minecraft.item.ItemStack(
-                                ModItems.patternWandUnbreakable,
-                                1,
-                                stack.getItemDamage());
-                        }
-                    }
-                    // Fallback to tier 13 if something goes wrong
-                    return new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 13);
-                }
-            });
+        // Tier 12 (8192): 2 redstone, 2 lapis
+        // Pattern:
+        // L R L
+        // R W R
+        // - - -
+        GameRegistry.addRecipe(
+            new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 12),
+            "LRL",
+            "RWR",
+            "   ",
+            'W',
+            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 12),
+            'R',
+            net.minecraft.init.Blocks.redstone_block,
+            'L',
+            net.minecraft.init.Blocks.lapis_block);
 
-        PatternWandMod.LOG.info("Registered Pattern Wand crafting recipe");
+        // Tier 13 (16384): 4 redstone, 4 lapis
+        // Pattern:
+        // L R L
+        // R W R
+        // L R L
+        GameRegistry.addRecipe(
+            new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable, 1, 13),
+            "LRL",
+            "RWR",
+            "LRL",
+            'W',
+            new net.minecraft.item.ItemStack(bbwUnbreakableWand, 1, 13),
+            'R',
+            net.minecraft.init.Blocks.redstone_block,
+            'L',
+            net.minecraft.init.Blocks.lapis_block);
+
+        PatternWandMod.LOG.info("Registered Pattern Wand crafting recipes for all tiers");
     }
 
     public void postInit(FMLPostInitializationEvent event) {}
