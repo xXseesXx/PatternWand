@@ -61,18 +61,25 @@ public class CommonProxy {
             return;
         }
 
+        // The unbreakable wand uses metadata for different tiers
+        // Use WILDCARD_VALUE to accept any tier
+        net.minecraft.item.ItemStack unbreakableWandAny = new net.minecraft.item.ItemStack(
+            bbwUnbreakableWand,
+            1,
+            net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE);
+
         // Pattern:
         // L R L
         // R W R
         // L R L
-        // Where: W = Unbreakable Builder's Wand, R = Redstone Block, L = Lapis Block
+        // Where: W = Any tier Unbreakable Builder's Wand, R = Redstone Block, L = Lapis Block
         GameRegistry.addRecipe(
             new net.minecraft.item.ItemStack(ModItems.patternWandUnbreakable),
             "LRL",
             "RWR",
             "LRL",
             'W',
-            bbwUnbreakableWand,
+            unbreakableWandAny,
             'R',
             net.minecraft.init.Blocks.redstone_block,
             'L',
