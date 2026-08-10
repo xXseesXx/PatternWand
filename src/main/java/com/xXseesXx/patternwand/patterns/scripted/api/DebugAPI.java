@@ -78,6 +78,15 @@ public class DebugAPI {
             currentPlayer = player;
             operationStartTimeNs = System.nanoTime();
             resetTiming();
+
+            // Send immediate test message to verify chat messaging works
+            if (currentPlayer != null) {
+                System.out
+                    .println("[PatternWand Debug] Starting timing for player: " + currentPlayer.getCommandSenderName());
+                currentPlayer.addChatMessage(new ChatComponentText("§e[Debug] Pattern execution started..."));
+            } else {
+                System.out.println("[PatternWand Debug] WARNING: Starting timing but player is null!");
+            }
         }
     }
 
@@ -203,9 +212,14 @@ public class DebugAPI {
      * Should be called after pattern placement is complete.
      */
     public static void finishPatternTiming() {
+        System.out.println("[PatternWand Debug] finishPatternTiming called, debugEnabled=" + debugEnabled);
+
         if (!debugEnabled) {
+            System.out.println("[PatternWand Debug] Debug not enabled, skipping timing output");
             return;
         }
+
+        System.out.println("[PatternWand Debug] Generating timing report, currentPlayer=" + currentPlayer);
 
         long totalTimeNs = System.nanoTime() - operationStartTimeNs;
         double totalMs = totalTimeNs / 1_000_000.0;
@@ -237,6 +251,7 @@ public class DebugAPI {
 
         // Send to player if available
         if (currentPlayer != null) {
+            System.out.println("[PatternWand Debug] Sending timing to player: " + currentPlayer.getCommandSenderName());
             currentPlayer.addChatMessage(new ChatComponentText(header));
             currentPlayer.addChatMessage(new ChatComponentText(total));
             currentPlayer.addChatMessage(new ChatComponentText(phase1));
@@ -245,6 +260,8 @@ public class DebugAPI {
             currentPlayer.addChatMessage(new ChatComponentText(phase3));
             currentPlayer.addChatMessage(new ChatComponentText(phase4));
             currentPlayer.addChatMessage(new ChatComponentText(phase5));
+        } else {
+            System.out.println("[PatternWand Debug] WARNING: No player available for timing output!");
         }
 
         // Also log to console
