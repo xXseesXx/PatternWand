@@ -223,8 +223,12 @@ public class LuaUtilWrapper {
             public LuaValue call(LuaValue x, LuaValue y, LuaValue angle) {
                 double[] result = api.rotate2D(x.checkdouble(), y.checkdouble(), angle.checkdouble());
                 LuaTable resultTable = new LuaTable();
+                // Set numeric indices (for array-style access)
                 resultTable.set(1, LuaValue.valueOf(result[0]));
                 resultTable.set(2, LuaValue.valueOf(result[1]));
+                // Also set named keys (for field-style access)
+                resultTable.set("x", LuaValue.valueOf(result[0]));
+                resultTable.set("y", LuaValue.valueOf(result[1]));
                 return resultTable;
             }
         });
@@ -272,6 +276,7 @@ public class LuaUtilWrapper {
                     args.arg(4)
                         .checkint());
                 LuaTable resultTable = new LuaTable();
+                // Set numeric indices (for array-style access)
                 resultTable.set(1, LuaValue.valueOf(result[0])); // u
                 resultTable.set(2, LuaValue.valueOf(result[1])); // v
                 resultTable.set(3, LuaValue.valueOf(result[2])); // w
