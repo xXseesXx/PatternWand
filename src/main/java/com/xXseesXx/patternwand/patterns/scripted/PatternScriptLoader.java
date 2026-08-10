@@ -233,6 +233,34 @@ public class PatternScriptLoader {
     }
 
     /**
+     * Get all loaded script names with category filtering.
+     *
+     * @param showDefaultPatterns Whether to include default patterns (with "default_" prefix)
+     * @return Array of filtered script names
+     */
+    public String[] getScriptNames(boolean showDefaultPatterns) {
+        if (showDefaultPatterns) {
+            return getScriptNames();
+        }
+
+        // Filter out default patterns
+        return scriptCache.keySet()
+            .stream()
+            .filter(name -> !isDefaultPattern(name))
+            .toArray(String[]::new);
+    }
+
+    /**
+     * Check if a pattern name represents a default example pattern.
+     *
+     * @param name Pattern name (filename)
+     * @return True if this is a default pattern
+     */
+    public boolean isDefaultPattern(String name) {
+        return name.startsWith("default_");
+    }
+
+    /**
      * Get the number of loaded scripts.
      *
      * @return Script count

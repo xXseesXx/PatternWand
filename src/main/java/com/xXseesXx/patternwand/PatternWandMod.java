@@ -20,11 +20,14 @@ import cpw.mods.fml.relauncher.Side;
     version = Tags.VERSION,
     name = "PatternWand",
     acceptedMinecraftVersions = "[1.7.10]",
-    dependencies = "required-after:betterbuilderswands")
+    dependencies = "required-after:betterbuilderswands",
+    guiFactory = "com.xXseesXx.patternwand.gui.PatternWandGuiFactory")
 public class PatternWandMod {
 
     public static final String MODID = "patternwand";
     public static final Logger LOG = LogManager.getLogger(MODID);
+
+    public static java.io.File configFile;
 
     @SidedProxy(
         clientSide = "com.xXseesXx.patternwand.ClientProxy",

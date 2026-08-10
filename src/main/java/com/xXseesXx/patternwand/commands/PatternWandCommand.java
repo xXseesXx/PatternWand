@@ -123,7 +123,8 @@ public class PatternWandCommand extends CommandBase {
     }
 
     private void handleList(ICommandSender sender) {
-        String[] scripts = scriptLoader.getScriptNames();
+        // Use server config to determine visibility
+        String[] scripts = scriptLoader.getScriptNames(Config.showDefaultPatterns);
 
         if (scripts.length == 0) {
             sender.addChatMessage(new ChatComponentText("§eNo pattern scripts loaded"));
@@ -396,6 +397,9 @@ public class PatternWandCommand extends CommandBase {
             }
 
             return getListOfStringsMatchingLastWord(args, patternNames.toArray(new String[0]));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("debug")) {
+            // Tab complete debug options
+            return getListOfStringsMatchingLastWord(args, "on", "off");
         } else if (args.length >= 3 && args[0].equalsIgnoreCase("set")) {
             // Tab complete parameter names for the selected pattern
             String patternName = args[1];

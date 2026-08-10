@@ -11,6 +11,10 @@ public class Config {
     public static int patternWandDurability = 1561; // Same as diamond tools
     public static long defaultPatternSeed = 0L; // Default seed for pattern generation (0 = stable default)
 
+    // Pattern Visibility Settings (Server-side)
+    // Expandable for future categories
+    public static boolean showDefaultPatterns = true; // Show patterns with "default_" prefix
+
     public static void synchronizeConfiguration(File configFile) {
         Configuration configuration = new Configuration(configFile);
 
@@ -43,6 +47,13 @@ public class Config {
         } catch (NumberFormatException e) {
             defaultPatternSeed = 0L;
         }
+
+        // Pattern Visibility Settings
+        showDefaultPatterns = configuration.getBoolean(
+            "showDefaultPatterns",
+            Configuration.CATEGORY_GENERAL,
+            showDefaultPatterns,
+            "Show default example patterns (patterns with 'default_' prefix). Set to false to hide them server-wide. Players can also hide them individually via client preference.");
 
         if (configuration.hasChanged()) {
             configuration.save();

@@ -18,7 +18,10 @@ public class CommonProxy {
     private PatternScriptLoader scriptLoader;
 
     public void preInit(FMLPreInitializationEvent event) {
-        Config.synchronizeConfiguration(event.getSuggestedConfigurationFile());
+        // Store config file for GUI access
+        PatternWandMod.configFile = event.getSuggestedConfigurationFile();
+
+        Config.synchronizeConfiguration(PatternWandMod.configFile);
 
         // Register items
         GameRegistry.registerItem(ModItems.patternWandUnbreakable, "patternWandUnbreakable");

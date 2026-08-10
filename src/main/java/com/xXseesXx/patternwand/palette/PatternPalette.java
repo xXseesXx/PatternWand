@@ -44,14 +44,18 @@ public class PatternPalette {
             String blockName = entryTag.getString("id");
             int meta = entryTag.hasKey("Damage") ? entryTag.getShort("Damage") : 0;
 
-            // Convert item name to block
-            net.minecraft.item.Item item = (net.minecraft.item.Item) net.minecraft.item.Item.itemRegistry
-                .getObject(blockName);
-            if (item != null) {
-                Block block = Block.getBlockFromItem(item);
-                if (block != null && block != Blocks.air) {
-                    entries.add(new PaletteEntry(block, meta));
+            // Convert item name to block - safely
+            try {
+                Object itemObj = net.minecraft.item.Item.itemRegistry.getObject(blockName);
+                if (itemObj instanceof net.minecraft.item.Item) {
+                    net.minecraft.item.Item item = (net.minecraft.item.Item) itemObj;
+                    Block block = Block.getBlockFromItem(item);
+                    if (block != null && block != Blocks.air) {
+                        entries.add(new PaletteEntry(block, meta));
+                    }
                 }
+            } catch (Exception e) {
+                // Skip invalid entries
             }
         }
 

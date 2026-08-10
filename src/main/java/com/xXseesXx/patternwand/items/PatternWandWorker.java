@@ -421,11 +421,13 @@ public class PatternWandWorker extends WandWorker {
 
         ArrayList<Point3d> placedBlocks = new ArrayList<Point3d>();
 
-        // Start timing for debug mode
-        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPatternTiming();
+        // Start timing for debug mode - pass player for chat messages
+        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPatternTiming(playerShim.getPlayer());
 
         try {
             // === PHASE 1: Generate Placement Plan (All Lua Execution) ===
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPhase1();
+
             com.xXseesXx.patternwand.patterns.PlacementPlan plan = generatePlan(
                 blocks,
                 patternName,
@@ -433,6 +435,8 @@ public class PatternWandWorker extends WandWorker {
                 clickedPos,
                 playerShim,
                 side);
+
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.endPhase1(plan.size());
 
             if (plan.isEmpty()) {
                 PatternWandMod.LOG.debug("Pattern generated no placements (all gaps or invalid indices)");
@@ -442,12 +446,18 @@ public class PatternWandWorker extends WandWorker {
             PatternWandMod.LOG.debug("Generated plan with " + plan.size() + " placements");
 
             // === PHASE 2: Aggregate Material Requirements ===
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPhase2();
+
             java.util.Map<String, com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement> requirements = plan
                 .getMaterialRequirements();
+
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.endPhase2();
 
             PatternWandMod.LOG.debug("Plan requires " + requirements.size() + " distinct material types");
 
             // === PHASE 3: Validate Materials Available ===
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPhase3();
+
             java.util.List<com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement> missingMaterials = new ArrayList<com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement>();
 
             for (com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement req : requirements.values()) {
@@ -459,6 +469,8 @@ public class PatternWandWorker extends WandWorker {
                 }
             }
 
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.endPhase3();
+
             if (!missingMaterials.isEmpty()) {
                 // Report missing materials and abort (Phase 4 handles reporting)
                 reportMissingMaterials(missingMaterials, playerShim);
@@ -468,8 +480,13 @@ public class PatternWandWorker extends WandWorker {
             // === PHASE 4: Material Consumption ===
             // Note: We DON'T manually consume here - the parent's placeBlocks() handles consumption
             // We validated materials are available in Phase 3, so placements will succeed
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPhase4();
+            // No actual work in Phase 4 with current architecture
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.endPhase4();
 
             // === PHASE 5: Execute Plan (Place Blocks in World) ===
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPhase5();
+
             for (com.xXseesXx.patternwand.patterns.PlacementPlan.PlacementEntry entry : plan.getPlacements()) {
                 ItemStack blockStack = new ItemStack(entry.block, 1, entry.metadata);
 
@@ -492,6 +509,8 @@ public class PatternWandWorker extends WandWorker {
                     placedBlocks.add(entry.position);
                 }
             }
+
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.endPhase5(placedBlocks.size());
 
             // Report success
             if (placedBlocks.size() < plan.size()) {
