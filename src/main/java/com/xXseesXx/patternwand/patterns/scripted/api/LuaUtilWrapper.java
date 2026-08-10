@@ -275,6 +275,10 @@ public class LuaUtilWrapper {
                 resultTable.set(1, LuaValue.valueOf(result[0])); // u
                 resultTable.set(2, LuaValue.valueOf(result[1])); // v
                 resultTable.set(3, LuaValue.valueOf(result[2])); // w
+                // Also set named keys (for field-style access)
+                resultTable.set("u", LuaValue.valueOf(result[0]));
+                resultTable.set("v", LuaValue.valueOf(result[1]));
+                resultTable.set("w", LuaValue.valueOf(result[2]));
                 return resultTable;
             }
         });
