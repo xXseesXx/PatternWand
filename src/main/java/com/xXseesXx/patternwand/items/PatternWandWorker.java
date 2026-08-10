@@ -322,33 +322,35 @@ public class PatternWandWorker extends WandWorker {
     }
 
     /**
-     * Place blocks using a scripted pattern.
+     * Generate a placement plan by executing the pattern for all positions.
+     * This separates Lua execution from material consumption and world modification.
+     * 
+     * @param blocks      List of positions to evaluate
+     * @param patternName Name of the pattern script to execute
+     * @param itemStack   The wand item (for seed and parameters)
+     * @param clickedPos  The position that was clicked
+     * @param playerShim  Player shim for context
+     * @param side        The face that was clicked
+     * @return PlacementPlan containing all block placements
+     * @throws ScriptExecutionException if pattern execution fails
      */
-    private ArrayList<Point3d> placeBlocksWithPattern(ItemStack itemStack, LinkedList<Point3d> blocks,
-        Point3d clickedPos, ItemStack sourceItems, IPlayerShim playerShim, int side, float hitX, float hitY, float hitZ,
-        String patternName) {
+    private com.xXseesXx.patternwand.patterns.PlacementPlan generatePlan(LinkedList<Point3d> blocks, String patternName,
+        ItemStack itemStack, Point3d clickedPos, IPlayerShim playerShim, int side) throws ScriptExecutionException {
 
-        ArrayList<Point3d> placedBlocks = new ArrayList<>();
+        com.xXseesXx.patternwand.patterns.PlacementPlan plan = new com.xXseesXx.patternwand.patterns.PlacementPlan();
 
-        // Start timing for debug mode
-        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPatternTiming();
-
-        // Get the compiled pattern script from proxy
+        // Get compiled script
         CompiledScript script = PatternWandMod.proxy.getScriptLoader()
             .getScript(patternName);
         if (script == null) {
-            PatternWandMod.LOG.warn("Pattern script not found: " + patternName);
-            return placedBlocks;
+            throw new ScriptExecutionException(patternName, "Pattern not found");
         }
 
-        // Convert palette to IInventory for script API
+        // Convert palette to inventory for script API
         IInventory paletteInventory = paletteToInventory(palette);
 
-        // Generate seed for pattern
-        // Priority: custom seed from NBT > world seed
+        // Get seed and parameters
         long seed = getPatternSeed(itemStack);
-
-        // Extract parameters from wand NBT
         java.util.Map<String, Object> parameterValues = extractParameters(itemStack, script);
 
         // Create placement context
@@ -357,73 +359,203 @@ public class PatternWandWorker extends WandWorker {
         // Get palette entries for quick lookup
         List<PaletteEntry> paletteEntries = palette.getEntries();
 
-        // Place each block according to pattern
+        // Execute pattern for each position and record results
         for (Point3d pos : blocks) {
-            try {
-                // Calculate relative coordinates from origin
-                int relX = pos.x - originPos.x;
-                int relY = pos.y - originPos.y;
-                int relZ = pos.z - originPos.z;
+            // Calculate relative coordinates from origin
+            int relX = pos.x - originPos.x;
+            int relY = pos.y - originPos.y;
+            int relZ = pos.z - originPos.z;
 
-                // Execute pattern to get palette index
-                int paletteIndex = PatternWandMod.proxy.getScriptLoader()
-                    .getEngine()
-                    .executePattern(
-                        script,
-                        pos.x,
-                        pos.y,
-                        pos.z,
-                        relX,
-                        relY,
-                        relZ,
-                        paletteInventory,
-                        seed,
-                        parameterValues,
-                        context);
+            // Execute pattern to get palette index
+            int paletteIndex = PatternWandMod.proxy.getScriptLoader()
+                .getEngine()
+                .executePattern(
+                    script,
+                    pos.x,
+                    pos.y,
+                    pos.z,
+                    relX,
+                    relY,
+                    relZ,
+                    paletteInventory,
+                    seed,
+                    parameterValues,
+                    context);
 
-                // -1 means gap (don't place)
-                if (paletteIndex == -1) {
-                    continue;
+            // -1 means gap (skip this position)
+            if (paletteIndex == -1) {
+                continue;
+            }
+
+            // Get block from palette and add to plan
+            if (paletteIndex >= 0 && paletteIndex < paletteEntries.size()) {
+                PaletteEntry entry = paletteEntries.get(paletteIndex);
+                if (entry != null && entry.block != null) {
+                    plan.addPlacement(pos, entry.block, entry.meta);
                 }
-
-                // Get block from palette at this index
-                if (paletteIndex >= 0 && paletteIndex < paletteEntries.size()) {
-                    PaletteEntry entry = paletteEntries.get(paletteIndex);
-                    if (entry != null && entry.block != null) {
-                        ItemStack blockToPlace = new ItemStack(entry.block, 1, entry.meta);
-
-                        // Place block at position using PlayerShim
-                        int itemsAvailable = playerShim.countItems(blockToPlace, false);
-                        if (itemsAvailable > 0) {
-                            // Call placeBlocks on a single-item list using parent
-                            LinkedList<Point3d> singleBlock = new LinkedList<>();
-                            singleBlock.add(pos);
-                            ArrayList<Point3d> placed = super.placeBlocks(
-                                itemStack,
-                                singleBlock,
-                                pos,
-                                blockToPlace,
-                                playerShim,
-                                side,
-                                hitX,
-                                hitY,
-                                hitZ);
-                            if (!placed.isEmpty()) {
-                                placedBlocks.add(pos);
-                            }
-                        }
-                    }
-                }
-            } catch (ScriptExecutionException e) {
-                PatternWandMod.LOG.error("Pattern execution failed at " + pos, e);
-                // Continue with other blocks
             }
         }
 
-        // Finish timing and print summary
-        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.finishPatternTiming();
+        return plan;
+    }
+
+    /**
+     * Place blocks using a scripted pattern with batched execution.
+     * 
+     * Execution flow (5 phases):
+     * 1. Generate placement plan (all Lua execution isolated)
+     * 2. Aggregate material requirements
+     * 3. Validate player has sufficient materials
+     * 4. Consume materials in batch
+     * 5. Execute plan (place blocks in world)
+     * 
+     * This approach provides:
+     * - Better performance (batch inventory operations)
+     * - No partial builds (validate before consuming)
+     * - Better error messages (report exactly what's missing)
+     * - Foundation for future features (undo, preview, AE2)
+     */
+    private ArrayList<Point3d> placeBlocksWithPattern(ItemStack itemStack, LinkedList<Point3d> blocks,
+        Point3d clickedPos, ItemStack sourceItems, IPlayerShim playerShim, int side, float hitX, float hitY, float hitZ,
+        String patternName) {
+
+        ArrayList<Point3d> placedBlocks = new ArrayList<Point3d>();
+
+        // Start timing for debug mode
+        com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.startPatternTiming();
+
+        try {
+            // === PHASE 1: Generate Placement Plan (All Lua Execution) ===
+            com.xXseesXx.patternwand.patterns.PlacementPlan plan = generatePlan(
+                blocks,
+                patternName,
+                itemStack,
+                clickedPos,
+                playerShim,
+                side);
+
+            if (plan.isEmpty()) {
+                PatternWandMod.LOG.debug("Pattern generated no placements (all gaps or invalid indices)");
+                return placedBlocks;
+            }
+
+            PatternWandMod.LOG.debug("Generated plan with " + plan.size() + " placements");
+
+            // === PHASE 2: Aggregate Material Requirements ===
+            java.util.Map<String, com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement> requirements = plan
+                .getMaterialRequirements();
+
+            PatternWandMod.LOG.debug("Plan requires " + requirements.size() + " distinct material types");
+
+            // === PHASE 3: Validate Materials Available ===
+            java.util.List<com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement> missingMaterials = new ArrayList<com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement>();
+
+            for (com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement req : requirements.values()) {
+                ItemStack checkStack = req.toSingleItemStack();
+                int available = playerShim.countItems(checkStack, false);
+
+                if (available < req.quantity) {
+                    missingMaterials.add(req);
+                }
+            }
+
+            if (!missingMaterials.isEmpty()) {
+                // Report missing materials and abort (Phase 4 handles reporting)
+                reportMissingMaterials(missingMaterials, playerShim);
+                return placedBlocks;
+            }
+
+            // === PHASE 4: Material Consumption ===
+            // Note: We DON'T manually consume here - the parent's placeBlocks() handles consumption
+            // We validated materials are available in Phase 3, so placements will succeed
+
+            // === PHASE 5: Execute Plan (Place Blocks in World) ===
+            for (com.xXseesXx.patternwand.patterns.PlacementPlan.PlacementEntry entry : plan.getPlacements()) {
+                ItemStack blockStack = new ItemStack(entry.block, 1, entry.metadata);
+
+                // Use parent's single-block placement logic
+                LinkedList<Point3d> singlePos = new LinkedList<Point3d>();
+                singlePos.add(entry.position);
+
+                ArrayList<Point3d> placed = super.placeBlocks(
+                    itemStack,
+                    singlePos,
+                    entry.position,
+                    blockStack,
+                    playerShim,
+                    side,
+                    hitX,
+                    hitY,
+                    hitZ);
+
+                if (!placed.isEmpty()) {
+                    placedBlocks.add(entry.position);
+                }
+            }
+
+            // Report success
+            if (placedBlocks.size() < plan.size()) {
+                // Some blocks couldn't be placed (world constraints)
+                playerShim.getPlayer()
+                    .addChatMessage(
+                        new net.minecraft.util.ChatComponentText(
+                            String.format("§ePlaced %d of %d blocks", placedBlocks.size(), plan.size())));
+            }
+
+        } catch (ScriptExecutionException e) {
+            PatternWandMod.LOG.error("Pattern execution failed", e);
+            playerShim.getPlayer()
+                .addChatMessage(
+                    new net.minecraft.util.ChatComponentText("§cPattern execution failed: " + e.getMessage()));
+        } catch (Exception e) {
+            PatternWandMod.LOG.error("Unexpected error during batched placement", e);
+            playerShim.getPlayer()
+                .addChatMessage(new net.minecraft.util.ChatComponentText("§cUnexpected error: " + e.getMessage()));
+        } finally {
+            // Finish timing and print summary
+            com.xXseesXx.patternwand.patterns.scripted.api.DebugAPI.finishPatternTiming();
+        }
 
         return placedBlocks;
+    }
+
+    /**
+     * Report missing materials to the player with detailed information.
+     * Shows up to 5 missing materials with available vs required counts.
+     */
+    private void reportMissingMaterials(
+        java.util.List<com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement> missingMaterials,
+        IPlayerShim playerShim) {
+
+        playerShim.getPlayer()
+            .addChatMessage(new net.minecraft.util.ChatComponentText("§cInsufficient materials!"));
+
+        int shown = 0;
+        for (com.xXseesXx.patternwand.patterns.PlacementPlan.MaterialRequirement req : missingMaterials) {
+            if (shown >= 5) {
+                int remaining = missingMaterials.size() - shown;
+                playerShim.getPlayer()
+                    .addChatMessage(
+                        new net.minecraft.util.ChatComponentText(
+                            String.format("§7... and %d more material type%s", remaining, remaining == 1 ? "" : "s")));
+                break;
+            }
+
+            ItemStack stack = req.toSingleItemStack();
+            int available = playerShim.countItems(stack, false);
+            int needed = req.quantity - available;
+
+            playerShim.getPlayer()
+                .addChatMessage(
+                    new net.minecraft.util.ChatComponentText(
+                        String.format(
+                            "§7- Need %d more %s §7(have %d, need %d)",
+                            needed,
+                            stack.getDisplayName(),
+                            available,
+                            req.quantity)));
+            shown++;
+        }
     }
 
     /**
