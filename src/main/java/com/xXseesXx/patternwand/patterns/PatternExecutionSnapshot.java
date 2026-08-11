@@ -6,8 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.CompiledScript;
-
+import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
 import com.xXseesXx.patternwand.patterns.scripted.PlacementContext;
 
 import portablejim.bbw.basics.Point3d;
@@ -67,23 +66,33 @@ public class PatternExecutionSnapshot {
 
     /**
      * Immutable representation of a block position to evaluate.
+     * Contains both absolute and relative coordinates.
      */
     public static class Position {
 
         public final int x;
         public final int y;
         public final int z;
+        public final int relX;
+        public final int relY;
+        public final int relZ;
 
-        public Position(int x, int y, int z) {
+        public Position(int x, int y, int z, int relX, int relY, int relZ) {
             this.x = x;
             this.y = y;
             this.z = z;
+            this.relX = relX;
+            this.relY = relY;
+            this.relZ = relZ;
         }
 
-        public Position(Point3d point) {
+        public Position(Point3d point, Point3d origin) {
             this.x = point.x;
             this.y = point.y;
             this.z = point.z;
+            this.relX = point.x - origin.x;
+            this.relY = point.y - origin.y;
+            this.relZ = point.z - origin.z;
         }
 
         /**
@@ -95,7 +104,7 @@ public class PatternExecutionSnapshot {
 
         @Override
         public String toString() {
-            return String.format("Position{%d,%d,%d}", x, y, z);
+            return String.format("Position{%d,%d,%d rel(%d,%d,%d)}", x, y, z, relX, relY, relZ);
         }
     }
 

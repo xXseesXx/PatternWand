@@ -7,12 +7,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.script.CompiledScript;
-
 import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.script.LuaScriptEngine;
+import org.luaj.vm2.LuaValue;
 
+import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
 import com.xXseesXx.patternwand.patterns.scripted.PlacementContext;
 
 /**
@@ -31,8 +30,8 @@ public class PatternExecutionSnapshotTest {
     @Before
     public void setUp() throws Exception {
         // Create a minimal compiled script for testing
-        LuaScriptEngine engine = new LuaScriptEngine();
-        mockScript = engine.compile("return 0");
+        LuaValue mockFunction = LuaValue.valueOf(0);
+        mockScript = new CompiledScript("test_script", mockFunction);
 
         // Create a minimal placement context
         mockContext = new PlacementContext(
@@ -158,7 +157,7 @@ public class PatternExecutionSnapshotTest {
 
         // Try to modify returned list - should throw UnsupportedOperationException
         try {
-            positions.add(new PatternExecutionSnapshot.Position(100, 100, 100));
+            positions.add(new PatternExecutionSnapshot.Position(100, 100, 100, 0, 0, 0));
             fail("Positions list should be immutable");
         } catch (UnsupportedOperationException e) {
             // Expected
@@ -172,7 +171,7 @@ public class PatternExecutionSnapshotTest {
         }
 
         // Verify modifying original list doesn't affect snapshot
-        originalPositions.add(new PatternExecutionSnapshot.Position(999, 999, 999));
+        originalPositions.add(new PatternExecutionSnapshot.Position(999, 999, 999, 0, 0, 0));
         assertEquals(
             "Snapshot should be isolated from original list",
             5,
@@ -305,10 +304,13 @@ public class PatternExecutionSnapshotTest {
     @Test
     public void testPositionConversion() {
         // Test Position creation from coordinates
-        PatternExecutionSnapshot.Position pos1 = new PatternExecutionSnapshot.Position(10, 64, -20);
+        PatternExecutionSnapshot.Position pos1 = new PatternExecutionSnapshot.Position(10, 64, -20, 5, 10, -15);
         assertEquals(10, pos1.x);
         assertEquals(64, pos1.y);
         assertEquals(-20, pos1.z);
+        assertEquals(5, pos1.relX);
+        assertEquals(10, pos1.relY);
+        assertEquals(-15, pos1.relZ);
 
         // Test conversion back to Point3d
         portablejim.bbw.basics.Point3d point = pos1.toPoint3d();
@@ -392,7 +394,7 @@ public class PatternExecutionSnapshotTest {
     private List<PatternExecutionSnapshot.Position> createPositionList(int count) {
         List<PatternExecutionSnapshot.Position> positions = new ArrayList<PatternExecutionSnapshot.Position>();
         for (int i = 0; i < count; i++) {
-            positions.add(new PatternExecutionSnapshot.Position(i, 64 + i, i * 2));
+            positions.add(new PatternExecutionSnapshot.Position(i, 64 + i, i * 2, i, i, i * 2));
         }
         return positions;
     }

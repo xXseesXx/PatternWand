@@ -11,10 +11,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.script.LuaScriptEngine;
+import org.luaj.vm2.LuaValue;
 
 import com.xXseesXx.patternwand.patterns.PatternExecutionSnapshot;
 import com.xXseesXx.patternwand.patterns.PlacementPlan;
+import com.xXseesXx.patternwand.patterns.scripted.CompiledScript;
 import com.xXseesXx.patternwand.patterns.scripted.PlacementContext;
 
 /**
@@ -201,13 +202,13 @@ public class LuaExecutorServiceTest {
      */
     private PatternExecutionSnapshot createMockSnapshot(String patternName, int positionCount) throws Exception {
         // Create mock compiled script
-        LuaScriptEngine engine = new LuaScriptEngine();
-        javax.script.CompiledScript script = engine.compile("return 0");
+        LuaValue mockFunction = LuaValue.valueOf(0);
+        CompiledScript script = new CompiledScript(patternName, mockFunction);
 
         // Create positions
         List<PatternExecutionSnapshot.Position> positions = new ArrayList<PatternExecutionSnapshot.Position>();
         for (int i = 0; i < positionCount; i++) {
-            positions.add(new PatternExecutionSnapshot.Position(i, 64, i));
+            positions.add(new PatternExecutionSnapshot.Position(i, 64, i, i, 0, i));
         }
 
         // Create palette
