@@ -259,6 +259,125 @@ If Lua execution is NOT the bottleneck, we need to:
 - [ ] Simple pattern is faster than noise pattern
 - [ ] Large patterns (1000+ blocks) show Phase 1 dominance
 
+## Phase B Optimization: API Wrapper Caching
+
+### Implementation
+
+**Date:** August 11, 2026  
+**Branch:** async-execution  
+**Commit:** f6cbd7d
+
+**Change:** Modified pattern execution to create API wrappers once per pattern execution instead of once per block.
+
+**Before:**
+```java
+// In generatePlan() loop - executed N times for N blocks
+for (Point3d pos : blocks) {
+    // executePattern creates these EVERY iteration:
+    NoiseAPI noise = new NoiseAPI(seed);           // NEW object
+    PaletteAPI palette = new PaletteAPI(...);       // NEW object
+    UtilAPI util = new UtilAPI();                   // NEW object
+    DebugAPI debug = new DebugAPI();                // NEW object
+    LuaTable luaNoise = wrap(noise);                // NEW wrapper
+    LuaTable luaPalette = wrap(palette);            // NEW wrapper
+    LuaTable luaUtil = wrap(util);                  // NEW wrapper
+    LuaTable luaDebug = wrap(debug);                // NEW wrapper
+    // Execute pattern...
+}
+// Total: 8 objects × N blocks
+```
+
+**After:**
+```java
+// Create API wrappers ONCE before loop
+NoiseAPI noise = new NoiseAPI(seed);                // 1 object
+PaletteAPI palette = new PaletteAPI(...);            // 1 object
+UtilAPI util = new UtilAPI();                        // 1 object
+DebugAPI debug = new DebugAPI();                     // 1 object
+LuaTable luaNoise = wrap(noise);                     // 1 wrapper
+LuaTable luaPalette = wrap(palette);                 // 1 wrapper
+LuaTable luaUtil = wrap(util);                       // 1 wrapper
+LuaTable luaDebug = wrap(debug);                     // 1 wrapper
+
+// Reuse for all blocks
+for (BlockPosition pos : positions) {
+    // Execute pattern with REUSED wrappers
+}
+// Total: 8 objects per execution (not per block)
+```
+
+**Allocation Reduction:**
+- **Before:** 8 objects × 1000 blocks = 8,000 objects
+- **After:** 8 objects × 1 execution = 8 objects
+- **Savings:** 99.9% reduction in wrapper allocation
+
+### Optimization Results
+
+#### Test 1: Simple Pattern (default_palette_weighted)
+
+| Blocks | Baseline (ms) | Optimized (ms) | Improvement | Notes |
+|--------|--------------|----------------|-------------|-------|
+| 10     | TBD          | TBD            | TBD         |       |
+| 100    | TBD          | TBD            | TBD         |       |
+| 500    | TBD          | TBD            | TBD         |       |
+| 1000   | TBD          | TBD            | TBD         |       |
+| 5000   | TBD          | TBD            | TBD         |       |
+
+#### Test 2: Noise Pattern (default_noise_perlin2d)
+
+| Blocks | Baseline (ms) | Optimized (ms) | Improvement | Notes |
+|--------|--------------|----------------|-------------|-------|
+| 10     | TBD          | TBD            | TBD         |       |
+| 100    | TBD          | TBD            | TBD         |       |
+| 500    | TBD          | TBD            | TBD         |       |
+| 1000   | TBD          | TBD            | TBD         |       |
+| 5000   | TBD          | TBD            | TBD         |       |
+
+### Expected Benefits
+
+**Primary:**
+- Reduced memory allocation pressure
+- Reduced GC overhead
+- Faster Phase 1 execution (10-30% improvement expected)
+
+**Secondary:**
+- Cleaner code structure (batch execution model)
+- Foundation for async execution (already working with lists)
+
+### Testing Instructions
+
+Run the same benchmark commands as baseline testing:
+
+```bash
+# Baseline comparison
+/patternwand benchmark default_palette_weighted 1000
+/patternwand benchmark default_noise_perlin2d 1000
+
+# Stress test
+/patternwand benchmark default_noise_perlin2d 5000
+```
+
+Compare timing results with baseline measurements.
+
+### Analysis
+
+**Success Criteria:**
+- ✓ No change in pattern output (identical results)
+- ⏳ 10-30% improvement in Phase 1 execution time
+- ⏳ Measurable reduction in GC pauses (if profiling)
+
+**Risk Assessment:**
+- **Risk:** Wrapper reuse could cause state pollution between blocks
+- **Mitigation:** API objects are stateless (seed is immutable, no mutable state)
+- **Validation:** In-game testing with all example patterns
+
+### Next Steps
+
+After validating this optimization:
+1. Proceed to Phase C: Concurrency Validation (Milestone 3)
+2. Test if LuaJIT is thread-safe with concurrent execution
+3. Decide if Globals isolation is needed
+
 ## Appendix
 
 ### Related Files
