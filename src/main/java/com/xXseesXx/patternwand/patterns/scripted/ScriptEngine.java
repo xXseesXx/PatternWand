@@ -386,6 +386,173 @@ public class ScriptEngine {
     }
 
     /**
+     * Block position for batch execution.
+     */
+    public static class BlockPosition {
+
+        public final int x, y, z;
+        public final int relX, relY, relZ;
+
+        public BlockPosition(int x, int y, int z, int relX, int relY, int relZ) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.relX = relX;
+            this.relY = relY;
+            this.relZ = relZ;
+        }
+    }
+
+    /**
+     * Execute a compiled pattern script for multiple blocks with API wrapper caching.
+     * This method creates API wrappers ONCE and reuses them for all blocks,
+     * eliminating per-block allocation overhead.
+     * 
+     * @param script           Compiled script
+     * @param positions        List of positions to evaluate
+     * @param paletteInventory Palette inventory
+     * @param seed             Pattern seed
+     * @param parameterValues  Parameter values (can be null)
+     * @param context          Placement context (can be null)
+     * @return Array of palette indices (same length as positions), -1 for gaps
+     * @throws ScriptExecutionException If execution fails or times out
+     */
+    public int[] executePatternBatch(CompiledScript script, java.util.List<BlockPosition> positions,
+        IInventory paletteInventory, long seed, java.util.Map<String, Object> parameterValues, PlacementContext context)
+        throws ScriptExecutionException {
+
+        if (positions == null || positions.isEmpty()) {
+            return new int[0];
+        }
+
+        // === CREATE API WRAPPERS ONCE ===
+        // This is the key optimization - these objects are reused for all blocks
+        NoiseAPI noise = new NoiseAPI(seed);
+        PaletteAPI palette = new PaletteAPI(paletteInventory, seed);
+        UtilAPI util = new UtilAPI();
+        DebugAPI debug = new DebugAPI();
+
+        LuaTable luaNoise = LuaNoiseWrapper.wrap(noise);
+        LuaTable luaPalette = LuaPaletteWrapper.wrap(palette);
+        LuaTable luaUtil = LuaUtilWrapper.wrap(util);
+        LuaTable luaDebug = LuaDebugWrapper.wrap(debug);
+
+        // Create parameters table once
+        LuaTable luaParams = new LuaTable();
+        if (parameterValues != null) {
+            for (java.util.Map.Entry<String, Object> entry : parameterValues.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof Integer) {
+                    luaParams.set(entry.getKey(), LuaValue.valueOf((Integer) value));
+                } else if (value instanceof Number) {
+                    luaParams.set(entry.getKey(), LuaValue.valueOf(((Number) value).doubleValue()));
+                } else if (value instanceof Boolean) {
+                    luaParams.set(entry.getKey(), LuaValue.valueOf((Boolean) value));
+                } else if (value instanceof String) {
+                    luaParams.set(entry.getKey(), LuaValue.valueOf((String) value));
+                }
+            }
+        }
+
+        // Create context table once
+        LuaTable luaContext = (context != null) ? LuaContextWrapper.wrap(context) : new LuaTable();
+
+        // Pre-create LuaValue for seed (avoids repeated boxing)
+        LuaValue luaSeed = LuaValue.valueOf(seed);
+
+        // === EXECUTE PATTERN FOR EACH BLOCK ===
+        int[] results = new int[positions.size()];
+
+        for (int i = 0; i < positions.size(); i++) {
+            BlockPosition pos = positions.get(i);
+
+            // Start timing if debug is enabled
+            long startTimeNs = DebugAPI.isDebugEnabled() ? System.nanoTime() : 0;
+
+            // Create callable for timeout
+            final int index = i; // Capture for lambda
+            Callable<Integer> task = () -> {
+                try {
+                    // Call pattern function with arguments
+                    // Reuse the same wrapper objects for all blocks
+                    LuaValue result = script.function.invoke(
+                        new LuaValue[] { LuaValue.valueOf(pos.x), LuaValue.valueOf(pos.y), LuaValue.valueOf(pos.z),
+                            LuaValue.valueOf(pos.relX), LuaValue.valueOf(pos.relY), LuaValue.valueOf(pos.relZ),
+                            luaPalette, // REUSED
+                            luaNoise, // REUSED
+                            luaUtil, // REUSED
+                            luaSeed, // REUSED
+                            luaParams, // REUSED
+                            luaContext, // REUSED
+                            luaDebug // REUSED
+                    })
+                        .arg1(); // Get first return value
+
+                    // Handle return value
+                    if (result.isnil()) {
+                        return -1; // nil means gap (don't place block)
+                    } else if (result.isnumber()) {
+                        int paletteIndex = result.toint();
+                        // Validate palette index
+                        if (paletteIndex < 0 || paletteIndex >= 54) {
+                            throw new ScriptExecutionException(
+                                script.name,
+                                "Pattern returned invalid palette index: " + paletteIndex + " (must be 0-53)");
+                        }
+                        return paletteIndex;
+                    } else {
+                        throw new ScriptExecutionException(
+                            script.name,
+                            "Pattern must return a number (palette index) or nil (gap). Got: " + result.typename());
+                    }
+
+                } catch (LuaError e) {
+                    throw new ScriptExecutionException(script.name, "Runtime error: " + e.getMessage(), e);
+                }
+            };
+
+            // Execute with timeout
+            Future<Integer> future = executor.submit(task);
+
+            try {
+                Integer result = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+                // Record execution time if debug is enabled
+                if (DebugAPI.isDebugEnabled()) {
+                    long executionTimeNs = System.nanoTime() - startTimeNs;
+                    DebugAPI.recordBlockExecution(executionTimeNs);
+                }
+
+                results[i] = result;
+
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                throw new ScriptExecutionException(
+                    script.name,
+                    "Script timeout (" + TIMEOUT_SECONDS
+                        + " seconds) at block "
+                        + index
+                        + ". "
+                        + "Your pattern is too complex or has an infinite loop.");
+
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof ScriptExecutionException) {
+                    throw (ScriptExecutionException) cause;
+                }
+                throw new ScriptExecutionException(script.name, "Execution failed: " + cause.getMessage(), cause);
+
+            } catch (InterruptedException e) {
+                Thread.currentThread()
+                    .interrupt();
+                throw new ScriptExecutionException(script.name, "Script execution interrupted");
+            }
+        }
+
+        return results;
+    }
+
+    /**
      * Shutdown the executor service.
      * Should be called when the engine is no longer needed.
      */

@@ -466,11 +466,10 @@ public class PatternWandCommand extends CommandBase {
             DebugAPI.startPatternTiming(player);
             DebugAPI.startPhase1();
 
-            int blocksEvaluated = 0;
-            int blocksPlanned = 0;
+            // Prepare positions for batch execution
+            java.util.List<com.xXseesXx.patternwand.patterns.scripted.ScriptEngine.BlockPosition> positions = new java.util.ArrayList<com.xXseesXx.patternwand.patterns.scripted.ScriptEngine.BlockPosition>();
 
-            // Execute pattern for specified number of positions
-            // We'll create a grid pattern for testing
+            // Create a grid pattern for testing
             int gridSize = (int) Math.ceil(Math.sqrt(size));
 
             for (int i = 0; i < size; i++) {
@@ -482,19 +481,34 @@ public class PatternWandCommand extends CommandBase {
                 int relY = 0;
                 int relZ = z - centerZ;
 
-                try {
-                    int paletteIndex = PatternWandMod.proxy.getScriptLoader()
-                        .getEngine()
-                        .executePattern(script, x, y, z, relX, relY, relZ, testPalette, seed, params, context);
+                positions.add(
+                    new com.xXseesXx.patternwand.patterns.scripted.ScriptEngine.BlockPosition(
+                        x,
+                        y,
+                        z,
+                        relX,
+                        relY,
+                        relZ));
+            }
 
-                    blocksEvaluated++;
-                    if (paletteIndex >= 0) {
-                        blocksPlanned++;
-                    }
-                } catch (Exception e) {
-                    sender.addChatMessage(new ChatComponentText("§cPattern execution failed: " + e.getMessage()));
-                    PatternWandMod.LOG.error("Benchmark pattern execution failed", e);
-                    return;
+            // Execute pattern in batch (API wrappers created once)
+            int[] results;
+            try {
+                results = PatternWandMod.proxy.getScriptLoader()
+                    .getEngine()
+                    .executePatternBatch(script, positions, testPalette, seed, params, context);
+            } catch (Exception e) {
+                sender.addChatMessage(new ChatComponentText("§cPattern execution failed: " + e.getMessage()));
+                PatternWandMod.LOG.error("Benchmark pattern execution failed", e);
+                return;
+            }
+
+            // Count blocks planned
+            int blocksEvaluated = results.length;
+            int blocksPlanned = 0;
+            for (int idx : results) {
+                if (idx >= 0) {
+                    blocksPlanned++;
                 }
             }
 

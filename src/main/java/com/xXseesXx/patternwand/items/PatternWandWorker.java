@@ -325,6 +325,9 @@ public class PatternWandWorker extends WandWorker {
      * Generate a placement plan by executing the pattern for all positions.
      * This separates Lua execution from material consumption and world modification.
      * 
+     * Uses batch execution to create API wrappers once per pattern execution
+     * instead of once per block, eliminating allocation overhead.
+     * 
      * @param blocks      List of positions to evaluate
      * @param patternName Name of the pattern script to execute
      * @param itemStack   The wand item (for seed and parameters)
@@ -359,28 +362,34 @@ public class PatternWandWorker extends WandWorker {
         // Get palette entries for quick lookup
         List<PaletteEntry> paletteEntries = palette.getEntries();
 
-        // Execute pattern for each position and record results
+        // === NEW: Convert positions to BlockPosition list for batch execution ===
+        java.util.List<com.xXseesXx.patternwand.patterns.scripted.ScriptEngine.BlockPosition> positions = new java.util.ArrayList<com.xXseesXx.patternwand.patterns.scripted.ScriptEngine.BlockPosition>();
+
         for (Point3d pos : blocks) {
             // Calculate relative coordinates from origin
             int relX = pos.x - originPos.x;
             int relY = pos.y - originPos.y;
             int relZ = pos.z - originPos.z;
 
-            // Execute pattern to get palette index
-            int paletteIndex = PatternWandMod.proxy.getScriptLoader()
-                .getEngine()
-                .executePattern(
-                    script,
+            positions.add(
+                new com.xXseesXx.patternwand.patterns.scripted.ScriptEngine.BlockPosition(
                     pos.x,
                     pos.y,
                     pos.z,
                     relX,
                     relY,
-                    relZ,
-                    paletteInventory,
-                    seed,
-                    parameterValues,
-                    context);
+                    relZ));
+        }
+
+        // === NEW: Execute pattern in batch (API wrappers created once) ===
+        int[] paletteIndices = PatternWandMod.proxy.getScriptLoader()
+            .getEngine()
+            .executePatternBatch(script, positions, paletteInventory, seed, parameterValues, context);
+
+        // === NEW: Build plan from batch results ===
+        for (int i = 0; i < blocks.size(); i++) {
+            Point3d pos = blocks.get(i);
+            int paletteIndex = paletteIndices[i];
 
             // -1 means gap (skip this position)
             if (paletteIndex == -1) {
