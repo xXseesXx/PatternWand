@@ -3,7 +3,7 @@
 **Project:** PatternWand Async Lua Execution  
 **Branch:** `async-execution`  
 **Start Date:** August 11, 2026  
-**Status:** Phase D Milestone 6 Complete - 6 of 20 milestones done
+**Status:** Phase D Milestone 8 Complete - 8 of 20 milestones done (40%)
 
 ---
 
@@ -244,6 +244,79 @@ Main Thread:
 - Ready for in-game integration testing
 
 **Next:** Wire up actual async usage in PatternWandWorker
+
+---
+
+### ✅ Phase D, Milestone 7: Track Pending Plans
+**Commit:** `2f32b8d` - "Implement Milestone 7: Track Pending Plans"  
+**Date:** Aug 11, 2026
+
+**Changes:**
+1. **AsyncPlacementHandler.java** - Tick-based completion handler
+   - Location: `src/main/java/com/xXseesXx/patternwand/executor/AsyncPlacementHandler.java`
+   - Search: `public class AsyncPlacementHandler`
+   - PendingJob: Stores UUID, Future, submitTime, patternName
+   - trackJob(): Store Future per player (one job max per player)
+   - @SubscribeEvent onServerTick(): Poll jobs each tick (Phase.END)
+   - handleCompletedJob(): Retrieve plan when isDone()
+   - handleTimedOutJob(): Cancel after 30s timeout
+   - cancelAllJobs(): Cleanup on shutdown
+
+2. **PatternWandMod.java** - Register handler
+   - Search: `asyncPlacementHandler`
+   - Static field for handler instance
+   - preInit: Register on FMLCommonHandler event bus
+   - serverStopping: Call cancelAllJobs() before executor shutdown
+
+**Why:** Main-thread polling to safely apply plans to world
+
+**Architecture:**
+- TickEvent.ServerTickEvent.Phase.END (after all game logic)
+- Iterator pattern for safe removal during iteration
+- 30s timeout detection for infinite loops
+- Cancellation-safe exception handling
+
+**Test:** Mod loads, handler registered, no errors in logs
+
+---
+
+### ✅ Phase D, Milestone 8: Validate Before Placement  
+**Commit:** `af45097` - "Implement Milestone 8: Validate Before Placement"  
+**Date:** Aug 11, 2026
+
+**Changes:**
+1. **AsyncPlacementHandler** - Added validation logic
+   - PendingJob: Added dimension and worldName fields
+   - trackJob(): Updated signature (dimension, worldName params)
+   - validateJob(): Comprehensive validation
+     * Player exists (findPlayerByUUID)
+     * Player alive (!isDead, isEntityAlive)
+     * Same dimension check
+     * Plan not empty
+   - applyPlan(): Placeholder (TODO Milestone 9)
+   - findPlayerByUUID(): Helper via MinecraftServer
+
+**Validation Checks:**
+```
+✓ Player exists
+✓ Player is alive  
+✓ Player in same dimension
+✓ Plan not empty
+✓ Old jobs cancelled (one per player)
+✓ Timeout after 30s
+```
+
+**Stale Job Handling:**
+- Failed validation → Skip with debug log
+- No error to player (outdated anyway)
+- Clean removal from tracking
+
+**Why:** Prevent applying stale plans after world/player changes
+
+**Status:**
+- Infrastructure complete for async execution ✅
+- Validation prevents stale placements ✅
+- Ready for actual async job submission (Milestone 9)
 
 ---
 
