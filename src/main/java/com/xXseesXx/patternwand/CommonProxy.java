@@ -3,6 +3,7 @@ package com.xXseesXx.patternwand;
 import java.io.File;
 
 import com.xXseesXx.patternwand.commands.PatternWandCommand;
+import com.xXseesXx.patternwand.executor.LuaExecutorService;
 import com.xXseesXx.patternwand.gui.PatternWandGuiHandler;
 import com.xXseesXx.patternwand.patterns.scripted.PatternScriptLoader;
 
@@ -16,6 +17,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 public class CommonProxy {
 
     private PatternScriptLoader scriptLoader;
+    private LuaExecutorService luaExecutor;
 
     public void preInit(FMLPreInitializationEvent event) {
         // Store config file for GUI access
@@ -46,6 +48,9 @@ public class CommonProxy {
     }
 
     public void init(FMLInitializationEvent event) {
+        // Initialize Lua executor service for async pattern execution
+        luaExecutor = new LuaExecutorService();
+
         // Load patterns during init phase when resource managers are fully available
         if (scriptLoader != null) {
             scriptLoader.loadAllPatterns();
@@ -107,5 +112,9 @@ public class CommonProxy {
 
     public PatternScriptLoader getScriptLoader() {
         return scriptLoader;
+    }
+
+    public LuaExecutorService getLuaExecutor() {
+        return luaExecutor;
     }
 }
