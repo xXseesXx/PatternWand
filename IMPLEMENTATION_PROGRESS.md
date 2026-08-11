@@ -3,7 +3,7 @@
 **Project:** PatternWand Async Lua Execution  
 **Branch:** `async-execution`  
 **Start Date:** August 11, 2026  
-**Status:** Phase D Milestone 4 Complete - 4 of 20 milestones done
+**Status:** Phase D Milestone 6 Complete - 6 of 20 milestones done
 
 ---
 
@@ -144,6 +144,106 @@ VERDICT: Single engine CANNOT safely handle concurrent calls (FAIL)
 - World operations: ONLY on main thread
 
 **Test:** `./gradlew test --tests "PatternExecutionSnapshotTest"` (all pass)
+
+---
+
+### ✅ Phase D, Milestone 5: Add Dedicated Lua Executor
+**Commit:** `fdefeb1` - "Implement Milestone 5: Add Dedicated Lua Executor"  
+**Date:** Aug 11, 2026
+
+**Changes:**
+1. **LuaExecutorService.java** - Created async executor service
+   - Location: `src/main/java/com/xXseesXx/patternwand/executor/LuaExecutorService.java`
+   - Search: `public class LuaExecutorService`
+   - Fixed thread pool: 2 threads default (configurable)
+   - Named daemon threads: "PatternWand-Lua-1", "PatternWand-Lua-2"
+   - Returns `Future<PlacementPlan>` for async results
+   - Graceful shutdown with 10s timeout
+   - PatternWandThreadFactory for custom thread creation
+
+2. **LuaExecutorServiceTest.java** - Comprehensive test suite
+   - Location: `src/test/java/com/xXseesXx/patternwand/executor/LuaExecutorServiceTest.java`
+   - Tests: Initialization, job submission, multiple jobs, shutdown, rejection
+   - **All 11 tests PASS ✅**
+
+3. **CommonProxy.java** - Added executor initialization
+   - Search: `private LuaExecutorService luaExecutor`
+   - Initialize in `init()` phase
+   - Added `getLuaExecutor()` getter
+
+4. **PatternWandMod.java** - Added lifecycle management
+   - Search: `public void serverStopping`
+   - Added `@Mod.EventHandler` for `FMLServerStoppingEvent`
+   - Calls `executor.shutdown()` on server stop
+
+**Why:** Dedicated thread pool prevents Lua execution from blocking main thread
+
+**Lifecycle:**
+- Init: Create executor during mod initialization
+- Runtime: Accept async pattern jobs
+- Shutdown: Gracefully stop on server shutdown
+
+**Test:** `./gradlew test --tests "LuaExecutorServiceTest"` (all pass)
+
+---
+
+### ✅ Phase D, Milestone 6: Async Execution Infrastructure Foundation
+**Commit:** `f206c14` - "Implement Milestone 6 foundation: Async execution infrastructure"  
+**Date:** Aug 11, 2026
+
+**Changes:**
+1. **PatternExecutionSnapshot.Position** - Added relative coordinates
+   - Search: `public static class Position`
+   - Now stores: x, y, z, relX, relY, relZ (6 fields)
+   - Constructor: `Position(int x, int y, int z, int relX, int relY, int relZ)`
+   - Helper: `Position(Point3d point, Point3d origin)` - auto-calculates relative
+   - Why: Lua patterns need both absolute and relative coordinates
+
+2. **LuaExecutorService.executePlan()** - Implemented Lua execution
+   - Search: `private PlacementPlan executePlan`
+   - Converts snapshot → ScriptEngine.BlockPosition format
+   - Creates IInventory from palette slots
+   - Calls `engine.executePatternBatch()` on background thread
+   - Converts registry names back to Block objects
+   - Builds PlacementPlan from results
+   - Added `createPaletteInventory()` helper
+
+3. **Type fixes** - Custom CompiledScript throughout
+   - PatternExecutionSnapshot: Changed from javax.script to custom type
+   - Tests updated: Use `new CompiledScript(name, LuaValue)`
+   - Block registry: Added `(Block)` cast for `getObject()` return value
+
+4. **Test updates** - All passing
+   - PatternExecutionSnapshotTest: Fixed Position constructors (6 params)
+   - LuaExecutorServiceTest: Fixed Position constructors, CompiledScript type
+   - **All tests PASS ✅**
+
+**Why:** Complete the async execution pipeline - snapshot → executor → plan
+
+**Thread Safety Flow:**
+```
+Main Thread:
+1. Create snapshot (Block → registry name)
+   ↓
+Background Thread:
+2. executePlan(snapshot)
+3. Convert snapshot → ScriptEngine format  
+4. Create IInventory from palette
+5. Execute Lua (engine.executePatternBatch)
+6. Build PlacementPlan (registry name → Block)
+   ↓
+Main Thread:
+7. Receive PlacementPlan
+8. Place blocks in world
+```
+
+**Status:**
+- Executor can execute patterns on background threads ✅
+- Snapshot → Plan conversion works ✅
+- Tests pass in isolation ✅
+- Ready for in-game integration testing
+
+**Next:** Wire up actual async usage in PatternWandWorker
 
 ---
 
