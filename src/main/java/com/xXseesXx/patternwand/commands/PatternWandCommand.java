@@ -40,7 +40,7 @@ public class PatternWandCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/patternwand <reload|list|set <pattern>|info|seed <value>|clearseed|debug <on|off>>";
+        return "/patternwand <reload|list|set <pattern>|info|seed <value>|clearseed|debug <on|off>|benchmark <pattern> <size>>";
     }
 
     @Override
@@ -100,6 +100,14 @@ public class PatternWandCommand extends CommandBase {
                     return;
                 }
                 handleDebug(sender, args[1]);
+                break;
+
+            case "benchmark":
+                if (args.length < 3) {
+                    sender.addChatMessage(new ChatComponentText("§cUsage: /patternwand benchmark <pattern> <size>"));
+                    return;
+                }
+                handleBenchmark(sender, args[1], args[2]);
                 break;
 
             default:
@@ -373,6 +381,160 @@ public class PatternWandCommand extends CommandBase {
         }
     }
 
+    private void handleBenchmark(ICommandSender sender, String patternName, String sizeStr) {
+        if (!(sender instanceof EntityPlayer)) {
+            sender.addChatMessage(new ChatComponentText("§cThis command can only be used by players"));
+            return;
+        }
+
+        EntityPlayer player = (EntityPlayer) sender;
+
+        // Parse size
+        int size;
+        try {
+            size = Integer.parseInt(sizeStr);
+            if (size <= 0 || size > 10000) {
+                sender.addChatMessage(new ChatComponentText("§cSize must be between 1 and 10000"));
+                return;
+            }
+        } catch (NumberFormatException e) {
+            sender.addChatMessage(new ChatComponentText("§cInvalid size: must be a number"));
+            return;
+        }
+
+        // Add .lua extension if not present
+        String scriptName = patternName.endsWith(".lua") ? patternName : patternName + ".lua";
+
+        // Check if script exists
+        CompiledScript script = scriptLoader.getScript(scriptName);
+        if (script == null) {
+            sender.addChatMessage(new ChatComponentText("§cPattern not found: " + patternName));
+            sender.addChatMessage(new ChatComponentText("§eUse /patternwand list to see available patterns"));
+            return;
+        }
+
+        sender.addChatMessage(
+            new ChatComponentText("§eRunning benchmark: " + patternName + " with " + size + " blocks..."));
+        sender.addChatMessage(new ChatComponentText("§7This will temporarily enable debug mode"));
+
+        // Store original debug state
+        boolean originalDebugState = DebugAPI.isDebugEnabled();
+
+        try {
+            // Enable debug mode for timing
+            DebugAPI.setDebugEnabled(true);
+
+            // Create a synthetic pattern execution for benchmarking
+            // We'll measure just the Lua execution phase without actual block placement
+            long startTimeNs = System.nanoTime();
+
+            // Create test palette (54 slots filled with stone)
+            net.minecraft.inventory.IInventory testPalette = new net.minecraft.inventory.InventoryBasic(
+                "Benchmark",
+                false,
+                54);
+            for (int i = 0; i < 54; i++) {
+                testPalette.setInventorySlotContents(i, new ItemStack(net.minecraft.init.Blocks.stone, 64, 0));
+            }
+
+            // Use default seed and empty parameters
+            long seed = Config.defaultPatternSeed;
+            java.util.Map<String, Object> params = script.metadata.createDefaultValues();
+
+            // Create synthetic placement context (centered at player position)
+            int centerX = (int) player.posX;
+            int centerY = (int) player.posY;
+            int centerZ = (int) player.posZ;
+
+            com.xXseesXx.patternwand.patterns.scripted.PlacementContext context = new com.xXseesXx.patternwand.patterns.scripted.PlacementContext(
+                centerX,
+                centerY,
+                centerZ,
+                1, // UP face
+                centerX - 10,
+                centerY - 10,
+                centerZ - 10,
+                centerX + 10,
+                centerY + 10,
+                centerZ + 10,
+                player.rotationYaw,
+                player.rotationPitch,
+                player.worldObj.getTotalWorldTime(),
+                player.worldObj.getWorldTime());
+
+            // Start timing
+            DebugAPI.startPatternTiming(player);
+            DebugAPI.startPhase1();
+
+            int blocksEvaluated = 0;
+            int blocksPlanned = 0;
+
+            // Execute pattern for specified number of positions
+            // We'll create a grid pattern for testing
+            int gridSize = (int) Math.ceil(Math.sqrt(size));
+
+            for (int i = 0; i < size; i++) {
+                int x = centerX + (i % gridSize);
+                int y = centerY;
+                int z = centerZ + (i / gridSize);
+
+                int relX = x - centerX;
+                int relY = 0;
+                int relZ = z - centerZ;
+
+                try {
+                    int paletteIndex = PatternWandMod.proxy.getScriptLoader()
+                        .getEngine()
+                        .executePattern(script, x, y, z, relX, relY, relZ, testPalette, seed, params, context);
+
+                    blocksEvaluated++;
+                    if (paletteIndex >= 0) {
+                        blocksPlanned++;
+                    }
+                } catch (Exception e) {
+                    sender.addChatMessage(new ChatComponentText("§cPattern execution failed: " + e.getMessage()));
+                    PatternWandMod.LOG.error("Benchmark pattern execution failed", e);
+                    return;
+                }
+            }
+
+            // End timing
+            DebugAPI.endPhase1(blocksPlanned);
+            long totalTimeNs = System.nanoTime() - startTimeNs;
+
+            // Calculate statistics
+            double totalMs = totalTimeNs / 1_000_000.0;
+            double avgMsPerBlock = totalMs / blocksEvaluated;
+            double blocksPerSecond = blocksEvaluated / (totalMs / 1000.0);
+
+            // Send benchmark results
+            sender.addChatMessage(new ChatComponentText("§a=== Benchmark Results ==="));
+            sender.addChatMessage(new ChatComponentText("§7Pattern: §f" + patternName));
+            sender.addChatMessage(new ChatComponentText("§7Blocks evaluated: §f" + blocksEvaluated));
+            sender.addChatMessage(
+                new ChatComponentText(
+                    "§7Blocks planned: §f" + blocksPlanned
+                        + " §7("
+                        + String.format("%.1f%%", (blocksPlanned * 100.0 / blocksEvaluated))
+                        + ")"));
+            sender.addChatMessage(new ChatComponentText("§7Total time: §e" + String.format("%.2f ms", totalMs)));
+            sender
+                .addChatMessage(new ChatComponentText("§7Avg per block: §e" + String.format("%.4f ms", avgMsPerBlock)));
+            sender.addChatMessage(
+                new ChatComponentText("§7Throughput: §e" + String.format("%.0f blocks/sec", blocksPerSecond)));
+
+            // Show detailed phase timing
+            DebugAPI.finishPatternTiming();
+
+        } catch (Exception e) {
+            sender.addChatMessage(new ChatComponentText("§cBenchmark failed: " + e.getMessage()));
+            PatternWandMod.LOG.error("Benchmark failed", e);
+        } finally {
+            // Restore original debug state
+            DebugAPI.setDebugEnabled(originalDebugState);
+        }
+    }
+
     @Override
     public List<String> addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
@@ -385,7 +547,8 @@ public class PatternWandCommand extends CommandBase {
                 "info",
                 "seed",
                 "clearseed",
-                "debug");
+                "debug",
+                "benchmark");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
             // Tab complete pattern names
             String[] scripts = scriptLoader.getScriptNames();
@@ -397,6 +560,20 @@ public class PatternWandCommand extends CommandBase {
             }
 
             return getListOfStringsMatchingLastWord(args, patternNames.toArray(new String[0]));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("benchmark")) {
+            // Tab complete pattern names for benchmark
+            String[] scripts = scriptLoader.getScriptNames();
+            List<String> patternNames = new ArrayList<>();
+
+            for (String script : scripts) {
+                // Remove .lua extension for tab completion
+                patternNames.add(script.replace(".lua", ""));
+            }
+
+            return getListOfStringsMatchingLastWord(args, patternNames.toArray(new String[0]));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("benchmark")) {
+            // Suggest common benchmark sizes
+            return getListOfStringsMatchingLastWord(args, "10", "100", "500", "1000", "5000");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("debug")) {
             // Tab complete debug options
             return getListOfStringsMatchingLastWord(args, "on", "off");
