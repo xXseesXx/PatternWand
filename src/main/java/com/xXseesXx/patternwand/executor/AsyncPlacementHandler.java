@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import net.minecraft.entity.player.EntityPlayer;
+
 import com.xXseesXx.patternwand.PatternWandMod;
 import com.xXseesXx.patternwand.patterns.PlacementPlan;
 
@@ -56,11 +58,16 @@ public class AsyncPlacementHandler {
         public final Future<PlacementPlan> future;
         public final long submitTimeMs;
         public final String patternName;
+        public final int dimension;
+        public final String worldName;
 
-        public PendingJob(UUID playerUUID, Future<PlacementPlan> future, String patternName) {
+        public PendingJob(UUID playerUUID, Future<PlacementPlan> future, String patternName, int dimension,
+            String worldName) {
             this.playerUUID = playerUUID;
             this.future = future;
             this.patternName = patternName;
+            this.dimension = dimension;
+            this.worldName = worldName;
             this.submitTimeMs = System.currentTimeMillis();
         }
 
@@ -101,8 +108,11 @@ public class AsyncPlacementHandler {
      * @param playerUUID  Player who initiated the job
      * @param future      Future containing the PlacementPlan result
      * @param patternName Name of pattern being executed (for logging)
+     * @param dimension   Dimension ID where job was submitted
+     * @param worldName   World name for validation
      */
-    public void trackJob(UUID playerUUID, Future<PlacementPlan> future, String patternName) {
+    public void trackJob(UUID playerUUID, Future<PlacementPlan> future, String patternName, int dimension,
+        String worldName) {
         if (playerUUID == null || future == null) {
             PatternWandMod.LOG.warn("Cannot track job with null player UUID or future");
             return;
@@ -118,14 +128,15 @@ public class AsyncPlacementHandler {
         }
 
         // Track new job
-        PendingJob job = new PendingJob(playerUUID, future, patternName);
+        PendingJob job = new PendingJob(playerUUID, future, patternName, dimension, worldName);
         pendingJobs.put(playerUUID, job);
 
         PatternWandMod.LOG.debug(
             String.format(
-                "Tracking async job for player %s: pattern '%s' (%d total pending)",
+                "Tracking async job for player %s: pattern '%s' in dimension %d (%d total pending)",
                 playerUUID,
                 patternName,
+                dimension,
                 pendingJobs.size()));
     }
 
@@ -240,8 +251,15 @@ public class AsyncPlacementHandler {
                     elapsedMs,
                     plan.size()));
 
-            // TODO Milestone 8: Validate and apply plan to world
-            // For now, just log completion
+            // Validate job before applying to world
+            if (!validateJob(job, plan)) {
+                PatternWandMod.LOG
+                    .debug(String.format("Job for player %s failed validation, skipping placement", job.playerUUID));
+                return;
+            }
+
+            // Apply plan to world (on main thread)
+            applyPlan(job, plan);
 
         } catch (java.util.concurrent.CancellationException e) {
             PatternWandMod.LOG
@@ -251,6 +269,67 @@ public class AsyncPlacementHandler {
                 String.format("Failed to retrieve plan for player %s: pattern '%s'", job.playerUUID, job.patternName),
                 e);
         }
+    }
+
+    /**
+     * Validate that a job is still valid before applying its plan.
+     */
+    private boolean validateJob(PendingJob job, PlacementPlan plan) {
+        EntityPlayer player = findPlayerByUUID(job.playerUUID);
+        if (player == null) {
+            PatternWandMod.LOG.debug(String.format("Player %s not found, job is stale", job.playerUUID));
+            return false;
+        }
+
+        if (!player.isEntityAlive() || player.isDead) {
+            PatternWandMod.LOG
+                .debug(String.format("Player %s is dead, skipping placement", player.getCommandSenderName()));
+            return false;
+        }
+
+        if (player.dimension != job.dimension) {
+            PatternWandMod.LOG.debug(
+                String.format(
+                    "Player %s changed dimensions (was %d, now %d), skipping placement",
+                    player.getCommandSenderName(),
+                    job.dimension,
+                    player.dimension));
+            return false;
+        }
+
+        if (plan.isEmpty()) {
+            PatternWandMod.LOG
+                .debug(String.format("Plan for player %s is empty, skipping", player.getCommandSenderName()));
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Apply a validated placement plan to the world.
+     */
+    private void applyPlan(PendingJob job, PlacementPlan plan) {
+        EntityPlayer player = findPlayerByUUID(job.playerUUID);
+        if (player == null) return;
+
+        // TODO Milestone 9: Full integration with PatternWandWorker
+        PatternWandMod.LOG.info(
+            String.format(
+                "Would apply plan for player %s: %d blocks from pattern '%s'",
+                player.getCommandSenderName(),
+                plan.size(),
+                job.patternName));
+    }
+
+    /**
+     * Find a player by UUID across all worlds.
+     */
+    private EntityPlayer findPlayerByUUID(UUID uuid) {
+        net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
+        if (server == null) return null;
+        return server.getConfigurationManager()
+            .func_152612_a(uuid.toString());
     }
 
     /**
