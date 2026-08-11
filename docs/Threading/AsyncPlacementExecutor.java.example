@@ -1,0 +1,265 @@
+package com.xXseesXx.patternwand.items;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ChatComponentText;
+
+import com.xXseesXx.patternwand.PatternWandMod;
+import com.xXseesXx.patternwand.patterns.PlacementPlan;
+
+import portablejim.bbw.basics.Point3d;
+import portablejim.bbw.shims.IPlayerShim;
+
+/**
+ * Handles async plan generation and coordinated placement execution.
+ * 
+ * Workflow:
+ * 1. Submit plan generation task to background thread
+ * 2. Generate PlacementPlan (Lua execution + material validation) async
+ * 3. Schedule placement callback on main thread
+ * 4. Execute placement on main thread with full world access
+ * 
+ * Thread Safety:
+ * - Plan generation: Background thread (no world access)
+ * - Material validation: Background thread (read-only inventory)
+ * - Block placement: Main thread only
+ */
+public class AsyncPlacementExecutor {
+
+    // Shared thread pool for all async plan generation
+    private static final ExecutorService planExecutor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "PatternWand-AsyncPlanner");
+        t.setDaemon(true); // Don't prevent server shutdown
+        return t;
+    });
+
+    // Track active executions for cleanup/cancellation
+    private static final Map<UUID, Future<?>> activeExecutions = new ConcurrentHashMap<>();
+
+    /**
+     * Context for async plan generation.
+     * Contains all data needed for background execution without world access.
+     */
+    public static class PlanContext {
+        public final UUID executionId;
+        public final PatternWandWorker worker;
+        public final java.util.LinkedList<Point3d> blocks;
+        public final String patternName;
+        public final net.minecraft.item.ItemStack itemStack;
+        public final Point3d clickedPos;
+        public final IPlayerShim playerShim;
+        public final int side;
+        public final String playerName;
+        
+        public PlanContext(PatternWandWorker worker, java.util.LinkedList<Point3d> blocks,
+                          String patternName, net.minecraft.item.ItemStack itemStack,
+                          Point3d clickedPos, IPlayerShim playerShim, int side) {
+            this.executionId = UUID.randomUUID();
+            this.worker = worker;
+            this.blocks = blocks;
+            this.patternName = patternName;
+            this.itemStack = itemStack;
+            this.clickedPos = clickedPos;
+            this.playerShim = playerShim;
+            this.side = side;
+            this.playerName = playerShim.getPlayer().getCommandSenderName();
+        }
+    }
+
+    /**
+     * Result of async plan generation.
+     */
+    public static class PlanResult {
+        public final PlacementPlan plan;
+        public final List<PlacementPlan.MaterialRequirement> missingMaterials;
+        public final String errorMessage;
+        
+        private PlanResult(PlacementPlan plan, List<PlacementPlan.MaterialRequirement> missingMaterials, String errorMessage) {
+            this.plan = plan;
+            this.missingMaterials = missingMaterials;
+            this.errorMessage = errorMessage;
+        }
+        
+        public static PlanResult success(PlacementPlan plan) {
+            return new PlanResult(plan, null, null);
+        }
+        
+        public static PlanResult missingMaterials(List<PlacementPlan.MaterialRequirement> missing) {
+            return new PlanResult(null, missing, null);
+        }
+        
+        public static PlanResult error(String message) {
+            return new PlanResult(null, null, message);
+        }
+        
+        public boolean isSuccess() {
+            return plan != null;
+        }
+        
+        public boolean hasMissingMaterials() {
+            return missingMaterials != null && !missingMaterials.isEmpty();
+        }
+        
+        public boolean hasError() {
+            return errorMessage != null;
+        }
+    }
+
+    /**
+     * Submit async plan generation and handle placement on main thread.
+     * 
+     * @param context Plan context with all required data
+     * @param onComplete Callback for placement execution (runs on main thread)
+     */
+    public static void executeAsync(final PlanContext context, final PlacementCallback onComplete) {
+        // Notify player that planning has started
+        notifyPlayer(context.playerShim.getPlayer(), "§7Generating pattern plan...");
+        
+        Future<?> future = planExecutor.submit(() -> {
+            try {
+                // === BACKGROUND THREAD: Generate plan (Phases 1-3) ===
+                PlanResult result = generatePlanBackground(context);
+                
+                // === SCHEDULE PLACEMENT ON MAIN THREAD ===
+                scheduleMainThreadCallback(context, result, onComplete);
+                
+            } catch (Exception e) {
+                PatternWandMod.LOG.error("Async plan generation failed", e);
+                scheduleMainThreadCallback(
+                    context,
+                    PlanResult.error("Unexpected error: " + e.getMessage()),
+                    onComplete
+                );
+            } finally {
+                // Clean up tracking
+                activeExecutions.remove(context.executionId);
+            }
+        });
+        
+        // Track for cancellation
+        activeExecutions.put(context.executionId, future);
+    }
+
+    /**
+     * Generate plan on background thread (Phases 1-3).
+     * NO WORLD ACCESS - only reads from passed context.
+     */
+    private static PlanResult generatePlanBackground(PlanContext context) {
+        try {
+            // Phase 1: Generate plan (Lua execution)
+            // Note: This calls worker.generatePlan() which should be made accessible
+            // Currently it's private - would need to make it package-private or public
+            PlacementPlan plan = context.worker.generatePlan(
+                context.blocks,
+                context.patternName,
+                context.itemStack,
+                context.clickedPos,
+                context.playerShim,
+                context.side
+            );
+            
+            if (plan.isEmpty()) {
+                return PlanResult.error("Pattern generated no blocks");
+            }
+            
+            // Phase 2: Aggregate materials
+            Map<String, PlacementPlan.MaterialRequirement> requirements = plan.getMaterialRequirements();
+            
+            // Phase 3: Validate materials
+            List<PlacementPlan.MaterialRequirement> missingMaterials = new ArrayList<>();
+            for (PlacementPlan.MaterialRequirement req : requirements.values()) {
+                net.minecraft.item.ItemStack checkStack = req.toSingleItemStack();
+                // Thread-safe: playerShim.countItems() is read-only
+                int available = context.playerShim.countItems(checkStack, false);
+                
+                if (available < req.quantity) {
+                    missingMaterials.add(req);
+                }
+            }
+            
+            if (!missingMaterials.isEmpty()) {
+                return PlanResult.missingMaterials(missingMaterials);
+            }
+            
+            return PlanResult.success(plan);
+            
+        } catch (com.xXseesXx.patternwand.patterns.scripted.ScriptExecutionException e) {
+            return PlanResult.error("Pattern error: " + e.getMessage());
+        } catch (Exception e) {
+            PatternWandMod.LOG.error("Plan generation failed", e);
+            return PlanResult.error("Generation failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Schedule placement callback on main thread.
+     */
+    private static void scheduleMainThreadCallback(final PlanContext context, final PlanResult result, final PlacementCallback callback) {
+        MinecraftServer.getServer().addScheduledTask(new Runnable() {
+            @Override
+            public void run() {
+                // Validate player still exists and is online
+                EntityPlayer player = MinecraftServer.getServer().getConfigurationManager()
+                    .func_152612_a(context.playerName); // getPlayerByUsername in 1.7.10
+                
+                if (player == null) {
+                    PatternWandMod.LOG.debug("Player {} disconnected before plan execution", context.playerName);
+                    return;
+                }
+                
+                // Execute callback on main thread
+                callback.onPlanComplete(context, result, player);
+            }
+        });
+    }
+
+    /**
+     * Cancel all active async executions (for server shutdown).
+     */
+    public static void cancelAll() {
+        for (Future<?> future : activeExecutions.values()) {
+            future.cancel(true);
+        }
+        activeExecutions.clear();
+    }
+
+    /**
+     * Shutdown executor (for server stop).
+     */
+    public static void shutdown() {
+        cancelAll();
+        planExecutor.shutdown();
+    }
+
+    /**
+     * Send chat message to player (thread-safe).
+     */
+    private static void notifyPlayer(EntityPlayer player, String message) {
+        if (player != null) {
+            player.addChatMessage(new ChatComponentText(message));
+        }
+    }
+
+    /**
+     * Callback interface for main thread placement execution.
+     */
+    public interface PlacementCallback {
+        /**
+         * Called on main thread after plan generation completes.
+         * 
+         * @param context Original context
+         * @param result Plan result (success, missing materials, or error)
+         * @param player Player (re-validated to exist)
+         */
+        void onPlanComplete(PlanContext context, PlanResult result, EntityPlayer player);
+    }
+}

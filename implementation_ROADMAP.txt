@@ -1,0 +1,1120 @@
+Yes. For a solo developer with an alpha mod, I would **not** structure this around GitHub PRs at all. I'd structure it around **testing milestones / gates**: each milestone leaves the code in a usable state, proves one hypothesis, and only then unlocks the next layer.
+
+The best synthesis of the two documents is:
+
+* keep the original plan's **async Lua → sync placement boundary**
+* keep its concern for **timeouts and concurrency correctness**
+* take the critique's **small-diff / don't-refactor-until-proven** philosophy
+* avoid speculative abstractions
+* use a **dedicated executor**, but keep the async control flow simple
+* defer Globals isolation until a test demonstrates it is necessary
+* because the mod is alpha, optimize for **fast iteration and observability**, not backwards compatibility or polished public configuration
+
+# Lua Async Execution — Testing-First Implementation Roadmap
+
+**Goal:** Move Lua pattern execution off the Minecraft server thread while keeping all world/block placement on the main thread.
+
+**Development model:** Solo developer / alpha mod / milestone-driven rather than PR-driven.
+
+**Core principle:**
+
+> Every milestone should answer one concrete question before the next architectural change is made.
+
+---
+
+# 0. Target Architecture
+
+Before changing code, establish the architecture we're aiming toward:
+
+```text
+                 MAIN THREAD
+                     │
+                     │ player uses wand
+                     ▼
+             PatternWandWorker
+                     │
+                     │ collect immutable inputs
+                     ▼
+              Async Lua Executor
+                     │
+                     │ Lua only
+                     │ no world access
+                     ▼
+               PlacementPlan
+                     │
+                     │ completion
+                     ▼
+                 MAIN THREAD
+                     │
+                     │ validate state
+                     ▼
+             Execute Placement
+```
+
+The important boundary is:
+
+```text
+BACKGROUND THREAD
+-----------------
+Lua
+Pattern calculation
+Noise
+Palette lookup
+Parameter lookup
+Plan construction
+
+MAIN THREAD
+-----------
+World access
+Block placement
+Player interaction
+Inventory mutation
+Chunk interaction
+Minecraft state
+```
+
+That boundary should remain extremely strict.
+
+---
+
+# Milestone 1 — Establish a Baseline
+
+### Goal
+
+Before optimizing anything, prove exactly where the time is going.
+
+The original plan already assumes Lua is the bottleneck based on testing, but this milestone turns that assumption into measurements. 
+
+### Tasks
+
+Add temporary timing instrumentation around:
+
+```text
+Pattern execution
+Plan generation
+Block placement
+Total wand operation
+```
+
+For example:
+
+```text
+Pattern: example_pattern
+Blocks: 1000
+
+Lua execution:     1987 ms
+Plan construction:   12 ms
+Block placement:    103 ms
+Total:             2102 ms
+```
+
+Also measure:
+
+* 10 blocks
+* 100 blocks
+* 500 blocks
+* 1000 blocks
+* ideally 5000+ blocks
+
+### Test
+
+Run the same pattern multiple times.
+
+Record:
+
+| Blocks | Lua | Placement | Total |
+| -----: | --: | --------: | ----: |
+|     10 |     |           |       |
+|    100 |     |           |       |
+|    500 |     |           |       |
+|   1000 |     |           |       |
+|   5000 |     |           |       |
+
+### Pass condition
+
+The data confirms that Lua execution dominates enough to justify asynchronous execution.
+
+### Stop condition
+
+If Lua isn't actually dominant anymore, **stop** and reassess.
+
+Don't build the async system just because the original hypothesis said to.
+
+---
+
+# Milestone 2 — Remove Per-Block Wrapper Construction
+
+### Goal
+
+Take the safest optimization from the original plan.
+
+The original identifies substantial allocation overhead from creating:
+
+* `NoiseAPI`
+* `PaletteAPI`
+* `UtilAPI`
+* `DebugAPI`
+* Lua wrappers
+
+for every block. 
+
+The maintainer critique correctly identifies this as the first thing worth doing because it's small and independently useful. 
+
+### Implementation
+
+Create the wrappers once for a pattern execution.
+
+Don't introduce `PatternExecutionContext` yet.
+
+Prefer something simple such as:
+
+```java
+LuaTable luaPalette;
+LuaTable luaNoise;
+LuaTable luaUtil;
+LuaTable luaDebug;
+LuaTable luaParams;
+LuaTable luaContext;
+```
+
+or an equally lightweight holder if the existing architecture naturally supports one.
+
+The important part is:
+
+```text
+OLD
+
+block
+ ├─ create API
+ ├─ create wrapper
+ ├─ execute Lua
+ └─ discard
+
+NEW
+
+pattern
+ ├─ create APIs
+ ├─ create wrappers
+ ├─ block → execute Lua
+ ├─ block → execute Lua
+ ├─ block → execute Lua
+ └─ discard
+```
+
+### Important constraint
+
+Do **not** simultaneously redesign `ScriptEngine`.
+
+Do not change public/internal method signatures unless required.
+
+### Test
+
+Run the exact same benchmark from Milestone 1.
+
+### Success criteria
+
+You want to establish:
+
+```text
+same output
+same pattern behavior
+lower allocation rate
+lower execution time
+```
+
+The performance improvement doesn't have to be enormous.
+
+The main objective is proving that the caching is safe.
+
+### Gate
+
+Only continue if all existing/example patterns behave identically.
+
+---
+
+# Milestone 3 — Prove Lua Thread Safety Before Designing Around It
+
+This is where I would deliberately deviate from both documents.
+
+The original plan immediately proposes Globals isolation. 
+
+The critique says to delete that work entirely. 
+
+The better approach is:
+
+> **Write the concurrency test first.**
+
+Don't argue theoretically.
+
+## Test A — Same script, multiple threads
+
+Run the same compiled script concurrently:
+
+```text
+Thread 1 → seed 100
+Thread 2 → seed 200
+Thread 3 → seed 300
+Thread 4 → seed 400
+```
+
+Verify that each produces the same output it produces when executed alone.
+
+## Test B — Randomness
+
+Specifically test patterns using:
+
+```lua
+math.random()
+math.randomseed()
+```
+
+Run them concurrently and compare against deterministic single-threaded reference output.
+
+## Test C — Mutable globals
+
+Test patterns that do things like:
+
+```lua
+counter = counter + 1
+```
+
+and determine whether that state is expected to persist between calls.
+
+## Test D — Multiple compiled scripts
+
+Run different scripts simultaneously.
+
+### Decision gate
+
+There are now two possible outcomes.
+
+### Outcome 1: Everything is isolated
+
+Great.
+
+**Do not add Globals isolation.**
+
+The simplest architecture wins.
+
+### Outcome 2: Shared state causes interference
+
+Then introduce execution isolation.
+
+And only then.
+
+This turns the original plan's speculative Phase 1.2 into a measured engineering decision.
+
+---
+
+# Milestone 4 — Define the Async Contract
+
+Before actually threading anything, establish what the async operation is allowed to consume and produce.
+
+This is the most important architectural milestone.
+
+The background operation should conceptually be:
+
+```java
+PlacementPlan generatePlan(
+    CompiledScript script,
+    immutable inputs
+)
+```
+
+The result should contain **data only**.
+
+For example:
+
+```text
+position
+palette index
+```
+
+It should not contain:
+
+```text
+World
+EntityPlayer
+ItemStack that is being mutated
+TileEntity
+MinecraftServer
+```
+
+### Goal
+
+Make it possible to say:
+
+> "If I gave this function to a thread with no Minecraft server access, it could still complete."
+
+That is your thread-safety boundary.
+
+---
+
+# Milestone 5 — Add a Minimal Dedicated Lua Executor
+
+Now introduce actual asynchronous execution.
+
+### Keep this intentionally boring
+
+A dedicated executor is preferable to blindly using Java's common pool.
+
+Something conceptually like:
+
+```java
+ExecutorService luaExecutor =
+    Executors.newFixedThreadPool(2, ...);
+```
+
+Start with:
+
+```text
+2 worker threads
+```
+
+Do not immediately make it configurable.
+
+You don't yet know whether 2, 4, or 8 is optimal.
+
+### Why not unlimited threads?
+
+Because the objective isn't:
+
+> "Make Lua execute as concurrently as possible."
+
+It's:
+
+> "Prevent Lua from blocking the Minecraft thread."
+
+Two concurrent Lua jobs may already be sufficient.
+
+Too many can simply turn CPU contention into another source of server lag.
+
+---
+
+# Milestone 6 — Implement Async Plan Generation
+
+Replace:
+
+```text
+wand use
+ ↓
+Lua
+ ↓
+placement
+```
+
+with:
+
+```text
+wand use
+ ↓
+snapshot inputs
+ ↓
+submit Lua job
+ ↓
+return immediately
+```
+
+The background job:
+
+```text
+Lua
+ ↓
+generate PlacementPlan
+ ↓
+complete Future
+```
+
+### Important
+
+The worker must **not** call Minecraft world APIs.
+
+No:
+
+```java
+world.setBlock(...)
+```
+
+No:
+
+```java
+player.addChatMessage(...)
+```
+
+No:
+
+```java
+MinecraftServer.getServer()
+```
+
+inside the Lua worker.
+
+---
+
+# Milestone 7 — Main-Thread Completion
+
+Once the Future completes, schedule exactly one main-thread continuation.
+
+The critique correctly identifies the original tick-polling approach as unnecessarily noisy. 
+
+Avoid:
+
+```text
+tick
+ └─ is future done?
+tick
+ └─ is future done?
+tick
+ └─ is future done?
+```
+
+Instead:
+
+```text
+worker completes
+      │
+      ▼
+completion callback
+      │
+      ▼
+Minecraft main thread
+      │
+      ▼
+validate
+      │
+      ▼
+place
+```
+
+The exact implementation should use whatever completion mechanism is safest with the actual Java/Forge environment, rather than assuming modern Java concurrency conveniences are automatically appropriate.
+
+The key architectural property matters more than whether the implementation is `Future`, `CompletableFuture`, or another mechanism.
+
+---
+
+# Milestone 8 — Validate Before Placement
+
+This is an area where I'd strengthen the original plan.
+
+An async operation creates a time gap:
+
+```text
+T0: player clicks
+T1: async Lua starts
+T2: Lua finishes
+T3: blocks get placed
+```
+
+The world may have changed between T0 and T3.
+
+Before executing the plan, validate:
+
+### Player
+
+```text
+Player still exists?
+Still connected?
+```
+
+### World
+
+```text
+Same world/dimension?
+```
+
+### Operation
+
+```text
+Is this async job still valid?
+Has it been cancelled/replaced?
+```
+
+### Wand state
+
+Depending on the existing architecture:
+
+```text
+Is the relevant wand still valid?
+```
+
+### Plan
+
+```text
+Is the plan within expected size limits?
+```
+
+Only after validation:
+
+```text
+executePlacementPlan(...)
+```
+
+---
+
+# Milestone 9 — Add Cancellation
+
+Once basic async operation works, add cancellation.
+
+You don't need an elaborate cancellation framework.
+
+At minimum:
+
+```text
+Job submitted
+     │
+     ├── player disconnects
+     ├── new operation starts
+     └── job explicitly cancelled
+```
+
+The worker periodically checks:
+
+```java
+if (cancelled) {
+    return;
+}
+```
+
+For example, between blocks.
+
+This is especially important for a slow or pathological Lua pattern.
+
+---
+
+# Milestone 10 — Add Total Execution Budget
+
+Now add the original plan's useful timeout concept.
+
+
+
+But keep it simple initially.
+
+```java
+long start = System.nanoTime();
+
+for (...) {
+    if (elapsed > timeout) {
+        throw new TimeoutException(...);
+    }
+
+    executeLua(...);
+}
+```
+
+### Why now?
+
+Because timeout behavior becomes much easier to test once async execution already exists.
+
+### Suggested initial semantics
+
+Have one total budget:
+
+```text
+Maximum Lua plan generation time
+```
+
+Don't immediately add:
+
+```text
+total timeout
++
+per-block timeout
++
+instruction budget
++
+CPU budget
++
+...
+```
+
+Those can come later if actual patterns demonstrate a need.
+
+---
+
+# Milestone 11 — Establish Async Eligibility
+
+Not every operation needs asynchronous execution.
+
+Keep small patterns synchronous initially.
+
+For example:
+
+```text
+< threshold
+    → synchronous
+
+>= threshold
+    → asynchronous
+```
+
+The original plan suggested 100 blocks; the critique suggested 200.
+
+Don't treat either number as sacred.
+
+Benchmark:
+
+```text
+10
+50
+100
+200
+500
+```
+
+Find where async overhead stops being worthwhile.
+
+### Alpha-friendly approach
+
+Start with:
+
+```text
+async disabled by default
+```
+
+Then enable it locally during testing.
+
+Once stable, flip the default.
+
+Because you're in alpha, this doesn't need to be exposed as polished user-facing configuration yet.
+
+---
+
+# Milestone 12 — Test Concurrent Players
+
+This is where the system moves from:
+
+> "works on my machine"
+
+to:
+
+> "actually behaves like a server feature."
+
+Test:
+
+```text
+Player A → 1000-block pattern
+Player B → 1000-block pattern
+```
+
+Then:
+
+```text
+A → seed 100
+B → seed 200
+```
+
+Then:
+
+```text
+A → pattern X
+B → pattern Y
+```
+
+Then:
+
+```text
+A → slow pattern
+B → normal pattern
+```
+
+Watch for:
+
+* shared Lua state
+* wrong seeds
+* wrong palette
+* incorrect placement
+* executor starvation
+* player state leakage
+
+---
+
+# Milestone 13 — Stress Test the Executor
+
+Now deliberately abuse it.
+
+Test:
+
+```text
+1 player
+5 simultaneous jobs
+
+5 players
+5 simultaneous jobs
+
+10 players
+20 simultaneous jobs
+```
+
+You want to determine:
+
+* Does the server remain responsive?
+* Does the queue grow indefinitely?
+* Does CPU usage spike?
+* Does memory usage grow?
+* Do old jobs delay new jobs excessively?
+
+### Add a concurrency limit if necessary
+
+For example:
+
+```text
+maximum active async jobs = 2
+```
+
+or:
+
+```text
+maximum queued jobs = N
+```
+
+Don't build elaborate scheduling until the stress test demonstrates that you need it.
+
+---
+
+# Milestone 14 — Failure Testing
+
+Now deliberately make everything go wrong.
+
+### Lua errors
+
+```lua
+error("boom")
+```
+
+Expected:
+
+```text
+job fails
+server remains alive
+player receives error
+```
+
+### Infinite/very slow computation
+
+Expected:
+
+```text
+timeout
+job terminates/cancels as far as safely possible
+server remains responsive
+```
+
+### Player disconnect
+
+Expected:
+
+```text
+job doesn't attempt placement
+```
+
+### Dimension change
+
+Expected:
+
+```text
+old job doesn't place into wrong world
+```
+
+### Executor shutdown
+
+Expected:
+
+```text
+no server shutdown hang
+```
+
+### Invalid Lua result
+
+Test:
+
+```lua
+return "hello"
+return -1
+return 999999
+return nil
+```
+
+Expected behavior should remain consistent with the existing synchronous implementation.
+
+---
+
+# Milestone 15 — Regression Test Existing Patterns
+
+Now run every pattern you currently consider valid.
+
+This is the point at which the original plan's concern about Globals becomes useful again.
+
+Compare:
+
+```text
+SYNC RESULT
+vs
+ASYNC RESULT
+```
+
+For deterministic patterns they should be identical.
+
+For random patterns, define exactly what "identical" means.
+
+Don't assume async execution should reproduce a particular random sequence unless that is already part of the pattern contract.
+
+---
+
+# Milestone 16 — Performance Comparison
+
+Now repeat Milestone 1.
+
+You want three measurements:
+
+### Existing
+
+```text
+sync + old allocation behavior
+```
+
+### Optimized sync
+
+```text
+sync + wrapper reuse
+```
+
+### Async
+
+```text
+async + wrapper reuse
+```
+
+Example final report:
+
+| Mode           |     Lua | Placement | Main-thread stall |
+| -------------- | ------: | --------: | ----------------: |
+| Original       | 2000 ms |    100 ms |           2100 ms |
+| Optimized sync | 1900 ms |    100 ms |           2000 ms |
+| Async          | 1900 ms |    100 ms |           ~100 ms |
+
+The exact numbers don't matter.
+
+The important measurement is:
+
+> **How much main-thread time disappeared?**
+
+---
+
+# Milestone 17 — Decide Whether Globals Isolation Is Actually Needed
+
+Only now make the decision.
+
+If all concurrency tests pass:
+
+### Do nothing.
+
+That is a legitimate engineering outcome.
+
+If failures occur:
+
+### Add isolation.
+
+At that point the original plan's `Globals` work becomes justified rather than speculative.
+
+This is one of the biggest improvements I'd make over both source documents.
+
+---
+
+# Milestone 18 — Simplify the Final Implementation
+
+Once everything works, perform a cleanup pass.
+
+Look for classes that only exist because we were experimenting.
+
+Potential candidates:
+
+```text
+PatternExecutionContext
+PlanResult
+ExecutionBudget
+AsyncPlanGenerator
+```
+
+Don't automatically delete them.
+
+Instead ask:
+
+> Does this abstraction make the final code easier to understand?
+
+If yes → keep it.
+
+If no → collapse it.
+
+This is particularly important for a solo-maintained alpha mod.
+
+---
+
+# Final Architecture
+
+The end result should ideally be roughly this:
+
+```text
+PatternWandWorker
+│
+├── synchronous path
+│      └── existing behavior
+│
+└── asynchronous path
+       │
+       ├── snapshot inputs
+       │
+       ├── submit to dedicated Lua executor
+       │
+       ├── Lua generates PlacementPlan
+       │
+       ├── timeout / cancellation checks
+       │
+       └── completion
+              │
+              ▼
+        Minecraft main thread
+              │
+              ├── validate player/world/job
+              │
+              └── execute PlacementPlan
+```
+
+And **not**:
+
+```text
+PatternWandWorker
+ └── AsyncPlanGenerator
+      └── PatternExecutionContext
+           └── ExecutionBudget
+                └── PlanResult
+                     └── ...
+```
+
+unless those abstractions prove useful during implementation.
+
+---
+
+# Recommended Milestone Sequence
+
+If I were implementing this solo, this would be my actual checklist:
+
+### Phase A — Measure
+
+* [ ] Baseline Lua timing
+* [ ] Baseline placement timing
+* [ ] Baseline allocation/performance
+* [ ] Identify representative patterns
+
+### Phase B — Safe optimization
+
+* [ ] Cache API wrappers
+* [ ] Cache reusable Lua tables where safe
+* [ ] Preserve existing APIs
+* [ ] Re-run regression tests
+* [ ] Re-run benchmarks
+
+### Phase C — Concurrency proof
+
+* [ ] Concurrent compiled-script test
+* [ ] Randomness test
+* [ ] Mutable-global test
+* [ ] Multiple-script test
+* [ ] Decide whether Globals isolation is actually required
+
+### Phase D — Async foundation
+
+* [ ] Define immutable async inputs
+* [ ] Define `PlacementPlan`
+* [ ] Create dedicated Lua executor
+* [ ] Add basic async generation
+* [ ] Keep world access out of worker
+
+### Phase E — Main-thread integration
+
+* [ ] Completion callback
+* [ ] Main-thread placement
+* [ ] Player validation
+* [ ] World/dimension validation
+* [ ] Job validity check
+
+### Phase F — Safety
+
+* [ ] Cancellation
+* [ ] Total timeout
+* [ ] Lua exception handling
+* [ ] Invalid-result handling
+* [ ] Executor shutdown
+* [ ] Queue/concurrency limits if testing demonstrates need
+
+### Phase G — Stress
+
+* [ ] Large patterns
+* [ ] Multiple players
+* [ ] Multiple simultaneous jobs
+* [ ] Slow Lua
+* [ ] Disconnects
+* [ ] Dimension changes
+* [ ] Server shutdown
+
+### Phase H — Final optimization
+
+* [ ] Compare sync vs optimized sync vs async
+* [ ] Determine async threshold
+* [ ] Determine thread count
+* [ ] Remove unnecessary abstractions
+* [ ] Enable async by default if stable
+
+---
+
+# What "Done" Means
+
+I would **not** use "no crashes after 48 hours" as the primary success criterion from the original plan. That's useful, but it's too vague for a solo developer. 
+
+I'd call this feature ready when all of these are true:
+
+### Correctness
+
+* Existing patterns produce correct results.
+* Concurrent patterns don't interfere.
+* Placement happens exclusively on the main thread.
+* Async failures don't crash the server.
+* Disconnected players don't receive stale placement.
+
+### Performance
+
+* Large pattern generation no longer blocks the server thread.
+* Placement remains approximately as fast as before.
+* Async overhead doesn't make small patterns worse unnecessarily.
+
+### Safety
+
+* Slow patterns have a bounded execution time.
+* Jobs can be cancelled.
+* Executor cannot grow without bound.
+* Server shutdown doesn't leave worker threads behind.
+
+### Maintainability
+
+* No unnecessary abstraction survives merely because it appeared in the original design.
+* Existing APIs aren't changed without a concrete reason.
+* The async boundary is obvious from reading the code.
+
+---
+
+## The philosophy I'd use
+
+The original plan asks:
+
+> **"What architecture would make this robust?"**
+
+The maintainer critique asks:
+
+> **"What's the smallest change that could work?"**
+
+For your situation, the right question is:
+
+> **"What's the smallest architecture we can prove is robust?"**
+
+That's why the milestone approach is better for a solo alpha project.
+
+You get the same discipline as the critique's atomic PRs—**each milestone is independently testable**—without pretending every milestone needs to become a GitHub event. And you preserve the original plan's important architectural boundary without committing yourself to its abstractions before they're justified.
