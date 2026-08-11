@@ -14,10 +14,34 @@ import portablejim.bbw.basics.Point3d;
  * A plan for placing blocks, generated from pattern execution.
  * Separates pattern generation (Lua) from material consumption (Minecraft).
  * 
+ * <p>
  * This enables:
- * - Batch material aggregation and validation
- * - Better error reporting before consumption
- * - Future features: preview, undo, async execution, AE2 integration
+ * <ul>
+ * <li>Batch material aggregation and validation</li>
+ * <li>Better error reporting before consumption</li>
+ * <li>Future features: preview, undo, async execution, AE2 integration</li>
+ * </ul>
+ * 
+ * <p>
+ * <b>Thread Safety for Async Execution:</b>
+ * <ul>
+ * <li>PlacementPlan is built by background threads during Lua execution</li>
+ * <li>Once complete, it's passed back to the main thread for world modification</li>
+ * <li>NOT thread-safe for concurrent modifications (single writer only)</li>
+ * <li>Safe for reading after construction is complete</li>
+ * <li>Block references are safe to hold - they're singletons registered on main thread</li>
+ * <li>Point3d is immutable (final fields), safe for cross-thread use</li>
+ * </ul>
+ * 
+ * <p>
+ * <b>Usage Pattern:</b>
+ * <ol>
+ * <li>Background thread: Create plan, call addPlacement() repeatedly</li>
+ * <li>Background thread: Return completed plan via Future</li>
+ * <li>Main thread: Receive plan, iterate entries, place blocks in world</li>
+ * </ol>
+ * 
+ * @see PatternExecutionSnapshot
  */
 public class PlacementPlan {
 
