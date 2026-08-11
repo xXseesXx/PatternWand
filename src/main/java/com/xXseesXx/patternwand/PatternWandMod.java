@@ -40,11 +40,19 @@ public class PatternWandMod {
 
     public static SimpleNetworkWrapper networkWrapper;
 
+    public static com.xXseesXx.patternwand.executor.AsyncPlacementHandler asyncPlacementHandler;
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         // Register network handler
         networkWrapper = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
         networkWrapper.registerMessage(PacketSyncPalette.Handler.class, PacketSyncPalette.class, 0, Side.SERVER);
+
+        // Initialize and register async placement handler
+        asyncPlacementHandler = new com.xXseesXx.patternwand.executor.AsyncPlacementHandler();
+        cpw.mods.fml.common.FMLCommonHandler.instance()
+            .bus()
+            .register(asyncPlacementHandler);
 
         proxy.preInit(event);
     }
@@ -66,6 +74,12 @@ public class PatternWandMod {
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
+        // Cancel all pending async jobs
+        if (asyncPlacementHandler != null) {
+            LOG.info("Server stopping - cancelling pending async jobs");
+            asyncPlacementHandler.cancelAllJobs();
+        }
+
         // Shutdown Lua executor service gracefully
         if (proxy.getLuaExecutor() != null) {
             LOG.info("Server stopping - shutting down Lua executor");
